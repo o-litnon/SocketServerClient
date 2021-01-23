@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Linq;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace NetSockets.Server
@@ -10,7 +10,7 @@ namespace NetSockets.Server
         private ServerSocket thisServer;
         public readonly string Id;
         private TcpClient thisClient;
-        private readonly byte[] buffer;
+        private byte[] buffer;
         private NetworkStream stream;
         private bool isOpen;
         private bool disposed;
@@ -24,39 +24,41 @@ namespace NetSockets.Server
 
         public Task Open(TcpClient client)
         {
-            thisClient = client;
+            if (isOpen)
+                throw new Exception($"Channel {Id} is already open.");
+
             isOpen = true;
+            thisClient = client;
 
             return Task.Run(() =>
             {
-                string data = "";
                 using (stream = thisClient.GetStream())
                 {
                     int position;
 
                     while (isOpen)
                     {
-                        while ((position = stream.Read(buffer, 0, buffer.Length)) != 0 && isOpen)
+                        while (buffer.Length < stream.Length)
+                            buffer = new byte[buffer.Length * 2];
+
+                        while (isOpen && (position = stream.Read(buffer, 0, (int)stream.Length)) != 0)
                         {
-                            data = Encoding.UTF8.GetString(buffer, 0, position);
                             var args = new DataReceivedArgs()
                             {
-                                Message = data,
+                                Message = buffer.ToArray(),
                                 ConnectionId = Id,
                                 ThisChannel = this
                             };
 
                             thisServer.OnDataIn(args);
-                            if (!isOpen) { break; }
                         }
                     }
                 }
             });
         }
 
-        public void Send(string message)
+        public void Send(byte[] data)
         {
-            var data = Encoding.UTF8.GetBytes(message);
             stream.Write(data, 0, data.Length);
         }
 

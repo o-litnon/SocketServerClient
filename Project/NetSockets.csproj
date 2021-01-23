@@ -8,9 +8,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <RootNamespace>
-    </RootNamespace>
-    <ProjectGuid>{1064FAB6-C7A4-2CCB-DAC5-D8612CF23BE7}</ProjectGuid>
+    <RootNamespace></RootNamespace>
+    <ProjectGuid>{FB767BB9-1873-0E46-654A-4CF27318F48A}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <AssemblyName>NetSockets</AssemblyName>
@@ -58,15 +57,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\NetSockets\Client\ClientSocket.cs" />
-    <Compile Include="Assets\NetSockets\Server\Channel.cs" />
-    <Compile Include="Assets\NetSockets\Server\ChannelRegistrationException.cs" />
-    <Compile Include="Assets\NetSockets\Server\Channels.cs" />
-    <Compile Include="Assets\NetSockets\Server\DataRetrievedArgs.cs" />
     <Compile Include="Assets\NetSockets\Server\ServerSocket.cs" />
-    <Compile Include="Assets\NetSockets\Client\Packet.cs" />
+    <Compile Include="Assets\NetSockets\Server\DataRetrievedArgs.cs" />
+    <Compile Include="Assets\NetSockets\Packet.cs" />
+    <Compile Include="Assets\NetSockets\Server\Channel.cs" />
+    <Compile Include="Assets\NetSockets\Server\Channels.cs" />
+    <Compile Include="Assets\NetSockets\ThreadManager.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Assets\NetSockets\NetSockets.asmdef" />
+     <None Include="Assets\NetSockets\NetSockets.asmdef" />
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity\Hub\Editor\2020.2.1f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
     </Reference>

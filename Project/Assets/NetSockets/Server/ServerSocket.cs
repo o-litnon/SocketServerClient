@@ -1,10 +1,6 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading.Tasks;
-using UnityEngine;
 
 namespace NetSockets.Server
 {
@@ -13,7 +9,7 @@ namespace NetSockets.Server
         public bool Running { get; set; }
         public event EventHandler<DataReceivedArgs> DataReceived;
         private TcpListener Listener;
-        public Channels ConnectedChannels;
+        public Channels ConnectedChannels { get; private set; }
 
         public ServerSocket(string ip, int port)
         {
@@ -38,10 +34,6 @@ namespace NetSockets.Server
 
             }
             catch (SocketException)
-            {
-                throw;
-            }
-            catch (ChannelRegistrationException)
             {
                 throw;
             }

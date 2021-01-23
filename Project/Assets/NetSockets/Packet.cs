@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
-namespace NetSockets.Client
+namespace NetSockets
 {
     public class Packet : IDisposable
     {

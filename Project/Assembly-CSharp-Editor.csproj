@@ -9,7 +9,7 @@
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <RootNamespace></RootNamespace>
-    <ProjectGuid>{FB39FB5C-4B90-1465-4094-097932B587A6}</ProjectGuid>
+    <ProjectGuid>{6CDB4719-1D28-38FF-BF92-A07FF7EAE25F}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <AssemblyName>Assembly-CSharp-Editor</AssemblyName>
@@ -713,11 +713,11 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Assembly-CSharp.csproj">
-      <Project>{A9BB21C9-261D-9407-8328-C8C527CC159B}</Project>
+      <Project>{5B9FF267-005F-A3BF-219E-FEAE2D8C894F}</Project>
       <Name>Assembly-CSharp</Name>
     </ProjectReference>
     <ProjectReference Include="NetSockets.csproj">
-      <Project>{1064FAB6-C7A4-2CCB-DAC5-D8612CF23BE7}</Project>
+      <Project>{FB767BB9-1873-0E46-654A-4CF27318F48A}</Project>
       <Name>NetSockets</Name>
     </ProjectReference>
   </ItemGroup>
