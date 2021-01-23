@@ -20,9 +20,9 @@ public class ClientMonoEditor : Editor
         if (!string.IsNullOrEmpty(message))
         {
             if(GUILayout.Button("Send TCP"))
-                driver.SendTest(message, NetSockets.ConnectionType.TCP);
+                driver.SendTest(message + "using TCP", NetSockets.ConnectionType.TCP);
             if (GUILayout.Button("Send UDP"))
-                driver.SendTest(message, NetSockets.ConnectionType.TCP);
+                driver.SendTest(message + "using UDP", NetSockets.ConnectionType.TCP);
         }
 
         if (GUILayout.Button("Connect"))

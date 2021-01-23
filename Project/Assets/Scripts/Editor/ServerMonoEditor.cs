@@ -23,9 +23,9 @@ public class ServerMonoEditor : Editor
         if (!string.IsNullOrEmpty(message))
         {
             if (GUILayout.Button("Send TCP"))
-                driver.SendTest(message, ConnectionType.TCP);
+                driver.SendTest(message + "using TCP", ConnectionType.TCP);
             if (GUILayout.Button("Send UDP"))
-                driver.SendTest(message, ConnectionType.UDP);
+                driver.SendTest(message + "using UDP", ConnectionType.UDP);
         }
 
         base.OnInspectorGUI();
