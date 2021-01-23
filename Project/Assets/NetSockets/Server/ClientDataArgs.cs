@@ -2,14 +2,9 @@
 
 namespace NetSockets.Server
 {
-    public class ClientDataArgs : EventArgs, IDisposable
+    public class ClientDataArgs : EventArgs
     {
-        public string ConnectionId { get; set; }
-        public Channel ThisChannel { get; set; }
-
-        public void Dispose()
-        {
-            //((IDisposable)ThisChannel).Dispose();
-        }
+        public string Id { get; set; }
+        public Channel Channel { get; set; }
     }
 }

@@ -28,7 +28,7 @@ namespace NetSockets.Client
         public Task Open()
         {
             if (isConnected)
-                throw new Exception("Client is already connected");
+                return Task.CompletedTask;
 
             tcpClient = new TcpClient
             {
@@ -39,15 +39,27 @@ namespace NetSockets.Client
 
             var tcpConnecting = tcpClient.ConnectAsync(endpoint.Address, endpoint.Port);
 
-            tcpConnecting.ContinueWith((task, sender) =>
-            {
-                _ = TcpListen();
-            }, tcpConnecting);
+            tcpConnecting.ContinueWith((task, sender) => TcpListen(), tcpConnecting);
 
             udpClient.Connect(endpoint);
             udpClient.BeginReceive(UdpReceiveCallback, udpClient);
 
             return tcpConnecting;
+        }
+
+        public void Close()
+        {
+            if (isConnected)
+            {
+                tcpClient.Close();
+                udpClient.Close();
+            }
+        }
+
+        public void Send(byte[] data)
+        {
+            if (isConnected)
+                stream.Write(data, 0, data.Length);
         }
 
         private void UdpReceiveCallback(IAsyncResult ar)
@@ -63,9 +75,9 @@ namespace NetSockets.Client
             OnDataIn(result);
         }
 
-        private Task TcpListen()
+        private void TcpListen()
         {
-            return Task.Run(() =>
+            Task.Run(() =>
             {
                 using (stream = tcpClient.GetStream())
                 {
@@ -87,26 +99,9 @@ namespace NetSockets.Client
             });
         }
 
-        public void Send(byte[] data)
+        private Task OnDataIn(DataReceivedArgs e)
         {
-            if (!isConnected)
-                throw new Exception("Client isn't connected");
-
-            stream.Write(data, 0, data.Length);
-        }
-
-        public void OnDataIn(DataReceivedArgs e)
-        {
-            DataReceived?.Invoke(this, e);
-        }
-
-        public void Close()
-        {
-            if (isConnected)
-            {
-                tcpClient.Close();
-                udpClient.Close();
-            }
+            return Task.Run(() => DataReceived?.Invoke(this, e));
         }
 
         public void Dispose()

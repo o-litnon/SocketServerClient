@@ -12,7 +12,7 @@ namespace NetSockets.Server
         private TcpClient thisClient;
         private readonly byte[] buffer;
         private NetworkStream stream;
-        private bool isOpen;
+        public bool isConnected => thisClient != null && thisClient.Client != null && thisClient.Client.Connected;
 
         public Channel(ServerSocket myServer, int bufferSize)
         {
@@ -21,27 +21,32 @@ namespace NetSockets.Server
             Id = Guid.NewGuid().ToString();
         }
 
-        public Task Open(TcpClient client)
+        public void Open(TcpClient client)
         {
-            if (isOpen)
-                throw new Exception($"Channel {Id} is already open.");
+            if (isConnected)
+                return;
 
-            isOpen = true;
             thisClient = client;
 
-            return Task.Run(() =>
+            Task.Run(() =>
             {
                 using (stream = thisClient.GetStream())
                 {
+                    thisServer.OnClientConnected(new ClientDataArgs
+                    {
+                        Id = Id,
+                        Channel = this
+                    });
+
                     int position;
 
-                    while (isOpen && (position = stream.Read(buffer, 0, buffer.Length)) != 0)
+                    while (isConnected && (position = stream.Read(buffer, 0, buffer.Length)) != 0)
                     {
                         var args = new DataReceivedArgs()
                         {
                             Message = buffer.Take(position).ToArray(),
-                            ConnectionId = Id,
-                            ThisChannel = this
+                            Id = Id,
+                            Channel = this
                         };
 
                         thisServer.OnDataIn(args);
@@ -54,21 +59,27 @@ namespace NetSockets.Server
 
         public void Send(byte[] data)
         {
-            stream.Write(data, 0, data.Length);
+            if (isConnected)
+                stream.Write(data, 0, data.Length);
         }
 
         public void Close()
         {
-            isOpen = false;
+            stream.Close();
+            thisClient.Close();
+            thisClient.Dispose();
             thisServer.ConnectedChannels.OpenChannels.TryRemove(Id, out Channel removedChannel);
-            Dispose();
+
+            thisServer.OnClientDisconnected(new ClientDataArgs
+            {
+                Id = Id,
+                Channel = this
+            });
         }
 
         public void Dispose()
         {
-            stream.Close();
-            thisClient.Close();
-            thisClient.Dispose();
+            Close();
 
             GC.SuppressFinalize(this);
         }

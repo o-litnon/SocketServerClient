@@ -14,7 +14,8 @@ public class ServerMono : MonoBehaviour
         Server = new ServerSocket(ip, port, bufferSize);
 
         Server.DataReceived += server_OnDataIn;
-        Server.ClientReceived += server_OnClientIn;
+        Server.ClientConnected += server_OnClientIn;
+        Server.ClientDisconnected += server_OnClientOut;
 
         Server.Start();
         Debug.Log("Server has started...");
@@ -38,9 +39,14 @@ public class ServerMono : MonoBehaviour
 
     private void server_OnClientIn(object sender, ClientDataArgs e)
     {
-        Debug.Log($"Client connected with Id: {e.ConnectionId}");
+        Debug.Log($"Client connected with Id: {e.Id}");
 
-        e.ThisChannel.Send(Encoding.UTF8.GetBytes("CONNECTION SUCCESS"));
+        e.Channel.Send(Encoding.UTF8.GetBytes($"Server assigned Id is '{e.Id}'"));
+    }
+
+    private void server_OnClientOut(object sender, ClientDataArgs e)
+    {
+        Debug.Log($"Client disconnected with Id: {e.Id}");
     }
 
     private void server_OnDataIn(object sender, DataReceivedArgs e)
@@ -51,7 +57,7 @@ public class ServerMono : MonoBehaviour
 
         if (data == "CLOSE")
         {
-            e.ThisChannel.Close();
+            e.Channel.Close();
         }
     }
 }

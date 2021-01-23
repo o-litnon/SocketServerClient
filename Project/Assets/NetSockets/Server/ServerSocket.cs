@@ -9,22 +9,23 @@ namespace NetSockets.Server
     {
         public bool Running { get; private set; }
         public event EventHandler<DataReceivedArgs> DataReceived;
-        public event EventHandler<ClientDataArgs> ClientReceived;
-        private TcpListener Listener;
-        public Channels ConnectedChannels { get; private set; }
+        public event EventHandler<ClientDataArgs> ClientConnected;
+        public event EventHandler<ClientDataArgs> ClientDisconnected;
+        public readonly Channels ConnectedChannels;
         public readonly int bufferSize;
+        private readonly TcpListener Listener;
 
         public ServerSocket(string ip, int port, int bufferSize = 4096)
         {
             this.bufferSize = bufferSize;
             Listener = new TcpListener(IPAddress.Parse(ip), port);
+            ConnectedChannels = new Channels(this);
         }
 
         public void Start()
         {
             Listener.Start();
             Running = true;
-            ConnectedChannels = new Channels(this);
             Listener.BeginAcceptTcpClient(TcpClientConnect, Listener);
         }
 
@@ -40,15 +41,7 @@ namespace NetSockets.Server
                 var channel = new Channel(this, bufferSize);
 
                 if (ConnectedChannels.OpenChannels.TryAdd(channel.Id, channel))
-                {
-                    _ = channel.Open(client);
-
-                    OnClientIn(new ClientDataArgs
-                    {
-                        ConnectionId = channel.Id,
-                        ThisChannel = channel
-                    });
-                }
+                    channel.Open(client);
             });
         }
 
@@ -64,14 +57,19 @@ namespace NetSockets.Server
             Listener.Stop();
         }
 
-        public void OnDataIn(DataReceivedArgs e)
+        internal Task OnDataIn(DataReceivedArgs e)
         {
-            DataReceived?.Invoke(this, e);
+            return Task.Run(() => { DataReceived?.Invoke(this, e); });
         }
 
-        public void OnClientIn(ClientDataArgs e)
+        internal Task OnClientConnected(ClientDataArgs e)
         {
-            ClientReceived?.Invoke(this, e);
+            return Task.Run(() => { ClientConnected?.Invoke(this, e); });
+        }
+
+        internal Task OnClientDisconnected(ClientDataArgs e)
+        {
+            return Task.Run(() => { ClientDisconnected?.Invoke(this, e); });
         }
     }
 }

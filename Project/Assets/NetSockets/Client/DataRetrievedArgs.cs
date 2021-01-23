@@ -2,13 +2,8 @@
 
 namespace NetSockets.Client
 {
-    public class DataReceivedArgs : EventArgs, IDisposable
+    public class DataReceivedArgs : EventArgs
     {
         public byte[] Message { get; set; }
-
-        public void Dispose()
-        {
-
-        }
     }
 }
