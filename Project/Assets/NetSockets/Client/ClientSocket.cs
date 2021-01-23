@@ -12,57 +12,65 @@ namespace NetSockets.Client
         public bool Running { get; set; }
         private TcpClient tcpClient;
         private UdpClient udpClient;
-        private bool isOpen;
-        private bool disposed;
+        private readonly byte[] buffer;
+        private IPEndPoint endpoint;
 
-        public ClientSocket(string ip, int port)
+        public event EventHandler<DataReceivedArgs> DataReceived;
+        public bool isConnected => tcpClient.Client.Connected;
+
+        public ClientSocket(string ip, int port, int bufferSize)
         {
-            var endpoint = new IPEndPoint(IPAddress.Parse(ip), port);
-            tcpClient = new TcpClient(endpoint);
+            endpoint = new IPEndPoint(IPAddress.Parse(ip), port);
+            tcpClient = new TcpClient
+            {
+                SendBufferSize = bufferSize,
+                ReceiveBufferSize = bufferSize
+            };
             udpClient = new UdpClient(endpoint);
+            buffer = new byte[bufferSize];
         }
 
         public Task Open()
         {
-            isOpen = true;
+            var tcpConnecting = tcpClient.ConnectAsync(endpoint.Address, endpoint.Port);
+            udpClient.Connect(endpoint);
+            udpClient.BeginReceive(UdpReceiveCallback, udpClient);
 
-            return Task.Run(() =>
-            {
-                while (isOpen)
-                {
+            tcpConnecting.ContinueWith((task, state) => {
+                Task.Run(() => {
+                    
+                //setup tcp listeners
 
-                }
-            });
+                });
+            }, tcpConnecting);
+
+            return tcpConnecting;
+        }
+
+        private void UdpReceiveCallback(IAsyncResult ar)
+        {
+            byte[] data = udpClient.EndReceive(ar, ref endpoint);
+            udpClient.BeginReceive(UdpReceiveCallback, udpClient);
+
+            var result = new DataReceivedArgs {
+                Message = data
+            };
+
+            DataReceived?.Invoke(this, result);
         }
 
         public void Close()
         {
-            Dispose(false);
-            isOpen = false;
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposed)
-            {
-                if (disposing)
-                {
-                    // TODO: dispose managed state (managed objects)
-                }
-                tcpClient.Close();
-                tcpClient.Dispose();
-
-                udpClient.Close();
-                udpClient.Dispose();
-
-                disposed = true;
-            }
+            tcpClient.Client.Disconnect(true);
         }
 
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            tcpClient.Close();
+            tcpClient.Dispose();
+
+            udpClient.Close();
+            udpClient.Dispose();
         }
     }
 }

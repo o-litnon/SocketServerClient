@@ -10,15 +10,14 @@ namespace NetSockets.Server
         private ServerSocket thisServer;
         public readonly string Id;
         private TcpClient thisClient;
-        private byte[] buffer;
+        private readonly byte[] buffer;
         private NetworkStream stream;
         private bool isOpen;
-        private bool disposed;
 
-        public Channel(ServerSocket myServer)
+        public Channel(ServerSocket myServer, int bufferSize)
         {
             thisServer = myServer;
-            buffer = new byte[256];
+            buffer = new byte[bufferSize];
             Id = Guid.NewGuid().ToString();
         }
 
@@ -38,10 +37,7 @@ namespace NetSockets.Server
 
                     while (isOpen)
                     {
-                        while (buffer.Length < stream.Length)
-                            buffer = new byte[buffer.Length * 2];
-
-                        while (isOpen && (position = stream.Read(buffer, 0, (int)stream.Length)) != 0)
+                        while (isOpen && (position = stream.Read(buffer, 0, buffer.Length)) != 0)
                         {
                             var args = new DataReceivedArgs()
                             {
@@ -64,28 +60,17 @@ namespace NetSockets.Server
 
         public void Close()
         {
-            Dispose(false);
             isOpen = false;
             thisServer.ConnectedChannels.OpenChannels.TryRemove(Id, out Channel removedChannel);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposed)
-            {
-                if (disposing)
-                {
-                    // TODO: dispose managed state (managed objects)
-                }
-                stream.Close();
-                thisClient.Close();
-                disposed = true;
-            }
+            Dispose();
         }
 
         public void Dispose()
         {
-            Dispose(true);
+            stream.Close();
+            thisClient.Close();
+            thisClient.Dispose();
+
             GC.SuppressFinalize(this);
         }
     }
