@@ -9,7 +9,7 @@ namespace NetSockets.Server
 
         public void Dispose()
         {
-            ((IDisposable)ThisChannel).Dispose();
+            //((IDisposable)ThisChannel).Dispose();
         }
     }
 }

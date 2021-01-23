@@ -40,6 +40,8 @@ public class ServerMono : MonoBehaviour
     private void server_OnClientIn(object sender, ClientDataArgs e)
     {
         Debug.Log($"Client connected with Id: {e.ConnectionId}");
+
+        e.ThisChannel.Send(Encoding.UTF8.GetBytes("SONNECTION SUCCESS"));
     }
 
     private void server_OnDataIn(object sender, DataReceivedArgs e)

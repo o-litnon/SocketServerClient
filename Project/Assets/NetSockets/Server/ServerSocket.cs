@@ -1,12 +1,13 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace NetSockets.Server
 {
     public class ServerSocket
     {
-        public bool Running { get; set; }
+        public bool Running { get; private set; }
         public event EventHandler<DataReceivedArgs> DataReceived;
         public event EventHandler<ClientDataArgs> ClientReceived;
         private TcpListener Listener;
@@ -19,39 +20,42 @@ namespace NetSockets.Server
             Listener = new TcpListener(IPAddress.Parse(ip), port);
         }
 
-        public async void Start()
+        public void Start()
         {
-            try
+            Listener.Start();
+            Running = true;
+            ConnectedChannels = new Channels(this);
+            Listener.BeginAcceptTcpClient(TcpClientConnect, Listener);
+        }
+
+        private async void TcpClientConnect(IAsyncResult ar)
+        {
+            TcpClient client = Listener.EndAcceptTcpClient(ar);
+
+            if (Running)
+                Listener.BeginAcceptTcpClient(TcpClientConnect, Listener);
+
+            await Task.Run(() =>
             {
-                Listener.Start();
-                Running = true;
-                ConnectedChannels = new Channels(this);
-                while (Running)
+                var channel = new Channel(this, bufferSize);
+
+                if (ConnectedChannels.OpenChannels.TryAdd(channel.Id, channel))
                 {
-                    var client = await Listener.AcceptTcpClientAsync();
-                    var channel = new Channel(this, bufferSize);
+                    _ = channel.Open(client);
 
-                    if (ConnectedChannels.OpenChannels.TryAdd(channel.Id, channel))
+                    OnClientIn(new ClientDataArgs
                     {
-                        _ = channel.Open(client);
-
-                        OnClientIn(new ClientDataArgs { 
-                            ConnectionId = channel.Id,
-                            ThisChannel = channel
-                        });
-                    }
+                        ConnectionId = channel.Id,
+                        ThisChannel = channel
+                    });
                 }
-
-            }
-            catch (SocketException)
-            {
-                throw;
-            }
+            }); ;
         }
 
         public void Stop()
         {
             Running = false;
+
             Listener.Stop();
         }
 
