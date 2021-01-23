@@ -12,12 +12,12 @@ namespace NetSockets.Client
         private readonly byte[] buffer;
         private IPEndPoint endpoint;
         private TcpClient tcpClient;
-        private UdpClient udpClient;
+        public UdpClient udpClient;
         private NetworkStream stream;
 
         public event EventHandler<DataReceivedArgs> DataReceived;
         public bool isConnected => tcpClient != null && tcpClient.Client != null && tcpClient.Client.Connected
-            && udpClient != null && udpClient.Client != null && udpClient.Client.Connected;
+            && (udpClient == null || udpClient.Client != null && udpClient.Client.Connected);
 
         public ClientSocket(string ip, int port, int bufferSize)
         {
@@ -35,14 +35,14 @@ namespace NetSockets.Client
                 SendBufferSize = buffer.Length,
                 ReceiveBufferSize = buffer.Length
             };
-            udpClient = new UdpClient(endpoint);
 
             var tcpConnecting = tcpClient.ConnectAsync(endpoint.Address, endpoint.Port);
 
-            tcpConnecting.ContinueWith((task, sender) => TcpListen(), tcpConnecting);
-
-            udpClient.Connect(endpoint);
-            udpClient.BeginReceive(UdpReceiveCallback, udpClient);
+            tcpConnecting.ContinueWith((task, sender) =>
+            {
+                UdpListen();
+                TcpListen();
+            }, tcpConnecting);
 
             return tcpConnecting;
         }
@@ -56,10 +56,19 @@ namespace NetSockets.Client
             }
         }
 
-        public void Send(byte[] data)
+        public Task Send(byte[] data, ConnectionType type = ConnectionType.TCP)
         {
-            if (isConnected)
-                stream.Write(data, 0, data.Length);
+            if (!isConnected)
+                return Task.CompletedTask;
+
+            switch (type)
+            {
+                case ConnectionType.UDP:
+                    return udpClient.SendAsync(data, data.Length, endpoint);
+                case ConnectionType.TCP:
+                default:
+                    return stream.WriteAsync(data, 0, data.Length);
+            }
         }
 
         private void UdpReceiveCallback(IAsyncResult ar)
@@ -74,7 +83,13 @@ namespace NetSockets.Client
 
             OnDataIn(result);
         }
+        private void UdpListen()
+        {
+            udpClient = new UdpClient((IPEndPoint)tcpClient.Client.LocalEndPoint);
 
+            udpClient.Connect(endpoint);
+            udpClient.BeginReceive(UdpReceiveCallback, udpClient);
+        }
         private void TcpListen()
         {
             Task.Run(() =>

@@ -1,3 +1,4 @@
+using NetSockets;
 using NetSockets.Server;
 using System.Text;
 using UnityEngine;
@@ -8,7 +9,7 @@ public class ServerMono : MonoBehaviour
     public int port = 7777;
     public int bufferSize = 4096;
     public ServerSocket Server;
-    // Start is called before the first frame update
+
     void Start()
     {
         Server = new ServerSocket(ip, port, bufferSize);
@@ -29,12 +30,12 @@ public class ServerMono : MonoBehaviour
         }
     }
 
-    public void SendTest(string message)
+    public void SendTest(string message, ConnectionType type)
     {
         var data = Encoding.UTF8.GetBytes(message);
 
         foreach (var item in Server.ConnectedChannels.OpenChannels)
-            item.Value.Send(data);
+            item.Value.Send(data, type);
     }
 
     private void server_OnClientIn(object sender, ClientDataArgs e)

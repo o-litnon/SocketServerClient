@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
@@ -57,10 +58,19 @@ namespace NetSockets.Server
             });
         }
 
-        public void Send(byte[] data)
+        public Task Send(byte[] data, ConnectionType type = ConnectionType.TCP)
         {
-            if (isConnected)
-                stream.Write(data, 0, data.Length);
+            if (!isConnected)
+                return Task.CompletedTask;
+
+            switch (type)
+            {
+                case ConnectionType.UDP:
+                    return thisServer.udpClient.SendAsync(data, data.Length, (IPEndPoint)thisClient.Client.RemoteEndPoint);
+                case ConnectionType.TCP:
+                default:
+                    return stream.WriteAsync(data, 0, data.Length);
+            }
         }
 
         public void Close()

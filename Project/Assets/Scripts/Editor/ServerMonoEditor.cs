@@ -1,3 +1,4 @@
+using NetSockets;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
@@ -19,8 +20,13 @@ public class ServerMonoEditor : Editor
 
         message = EditorGUILayout.TextField("Test message:", message);
 
-        if (!string.IsNullOrEmpty(message) && GUILayout.Button("Send"))
-            driver.SendTest(message);
+        if (!string.IsNullOrEmpty(message))
+        {
+            if (GUILayout.Button("Send TCP"))
+                driver.SendTest(message, ConnectionType.TCP);
+            if (GUILayout.Button("Send UDP"))
+                driver.SendTest(message, ConnectionType.UDP);
+        }
 
         base.OnInspectorGUI();
     }

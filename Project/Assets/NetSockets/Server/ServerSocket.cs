@@ -14,12 +14,15 @@ namespace NetSockets.Server
         public readonly Channels ConnectedChannels;
         public readonly int bufferSize;
         private readonly TcpListener Listener;
+        internal readonly UdpClient udpClient;
 
         public ServerSocket(string ip, int port, int bufferSize = 4096)
         {
+            var endpoint = new IPEndPoint(IPAddress.Parse(ip), port);
             this.bufferSize = bufferSize;
-            Listener = new TcpListener(IPAddress.Parse(ip), port);
             ConnectedChannels = new Channels(this);
+            Listener = new TcpListener(endpoint);
+            udpClient = new UdpClient(endpoint);
         }
 
         public void Start()
@@ -27,6 +30,20 @@ namespace NetSockets.Server
             Listener.Start();
             Running = true;
             Listener.BeginAcceptTcpClient(TcpClientConnect, Listener);
+            udpClient.BeginReceive(UdpReceiveCallback, udpClient);
+        }
+
+        private void UdpReceiveCallback(IAsyncResult ar)
+        {
+            IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Any, 0);
+            byte[] data = udpClient.EndReceive(ar, ref clientEndPoint);
+
+            udpClient.BeginReceive(UdpReceiveCallback, udpClient);
+
+            OnDataIn(new DataReceivedArgs
+            {
+                Message = data
+            });
         }
 
         private void TcpClientConnect(IAsyncResult ar)

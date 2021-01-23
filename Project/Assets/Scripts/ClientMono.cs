@@ -1,6 +1,8 @@
 using UnityEngine;
 using NetSockets.Client;
 using System.Text;
+using System.Net;
+using NetSockets;
 
 public class ClientMono : MonoBehaviour
 {
@@ -23,16 +25,20 @@ public class ClientMono : MonoBehaviour
         Debug.Log($"Client received message: {data}");
     }
 
-    public void SendTest(string message)
+    public void SendTest(string message, ConnectionType type )
     {
         var data = Encoding.UTF8.GetBytes(message);
 
-        Socket.Send(data);
+        Socket.Send(data, type);
     }
 
     public void Connect()
     {
-        Socket.Open();
+        var connecting = Socket.Open();
+
+        //connecting.ContinueWith(t => {
+        //    Debug.Log($"{((IPEndPoint)Socket.udpClient.Client.LocalEndPoint).ToString()}");
+        //});
     }
 
     public void Disconnect()

@@ -17,8 +17,13 @@ public class ClientMonoEditor : Editor
         GUILayout.Label($"Is Connected: {driver.Socket?.isConnected}");
         message = EditorGUILayout.TextField("Test message:", message);
 
-        if (!string.IsNullOrEmpty(message) && GUILayout.Button("Send"))
-            driver.SendTest(message);
+        if (!string.IsNullOrEmpty(message))
+        {
+            if(GUILayout.Button("Send TCP"))
+                driver.SendTest(message, NetSockets.ConnectionType.TCP);
+            if (GUILayout.Button("Send UDP"))
+                driver.SendTest(message, NetSockets.ConnectionType.TCP);
+        }
 
         if (GUILayout.Button("Connect"))
             driver.Connect();
