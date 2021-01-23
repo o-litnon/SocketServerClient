@@ -6,12 +6,13 @@ using System.Threading.Tasks;
 
 namespace NetSockets.Server
 {
-    public class Channel : IDisposable
+    public class Channel : ISender, IDisposable
     {
-        private ServerSocket thisServer;
         public readonly string Id;
-        private TcpClient thisClient;
+        public IPEndPoint RemoteEndpoint { get; private set; }
+        private ServerSocket thisServer;
         private readonly byte[] buffer;
+        private TcpClient thisClient;
         private NetworkStream stream;
         public bool Running => thisClient != null && thisClient.Client != null && thisClient.Client.Connected;
 
@@ -24,10 +25,14 @@ namespace NetSockets.Server
 
         public Task Open(TcpClient client)
         {
+            if (!thisServer.ConnectedChannels.OpenChannels.TryAdd(Id, this))
+                return Task.CompletedTask;
+
             if (Running)
                 return Task.CompletedTask;
 
             thisClient = client;
+            RemoteEndpoint = (IPEndPoint)thisClient.Client.RemoteEndPoint;
             stream = thisClient.GetStream();
 
             Task.Run(async () =>
@@ -64,7 +69,7 @@ namespace NetSockets.Server
             switch (type)
             {
                 case ConnectionType.UDP:
-                    return thisServer.udpClient.SendAsync(data, data.Length, (IPEndPoint)thisClient.Client.RemoteEndPoint);
+                    return thisServer.udpClient.SendAsync(data, data.Length, RemoteEndpoint);
                 case ConnectionType.TCP:
                 default:
                     return stream.WriteAsync(data, 0, data.Length);

@@ -1,11 +1,12 @@
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace NetSockets.Server
 {
-    public class ServerSocket: ISocket
+    public class ServerSocket : ISocket
     {
         public bool Running { get; private set; }
         public event EventHandler<DataReceivedArgs> DataReceived;
@@ -27,7 +28,8 @@ namespace NetSockets.Server
 
         public Task Open()
         {
-            return Task.Run(() => {
+            return Task.Run(() =>
+            {
                 Listener.Start();
                 Running = true;
                 Listener.BeginAcceptTcpClient(TcpClientConnect, Listener);
@@ -35,38 +37,39 @@ namespace NetSockets.Server
             });
         }
 
-        private void UdpReceiveCallback(IAsyncResult ar)
+        private async void UdpReceiveCallback(IAsyncResult ar)
         {
             IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Any, 0);
             byte[] data = udpClient.EndReceive(ar, ref clientEndPoint);
 
             udpClient.BeginReceive(UdpReceiveCallback, udpClient);
 
-            OnDataIn(new DataReceivedArgs
+            var channel = ConnectedChannels.OpenChannels.FirstOrDefault(d => d.Value.RemoteEndpoint.Equals(clientEndPoint));
+
+            await OnDataIn(new DataReceivedArgs
             {
+                Id = channel.Key,
+                Channel = channel.Value,
                 Message = data
             });
         }
 
-        private void TcpClientConnect(IAsyncResult ar)
+        private async void TcpClientConnect(IAsyncResult ar)
         {
             TcpClient client = Listener.EndAcceptTcpClient(ar);
 
             if (Running)
                 Listener.BeginAcceptTcpClient(TcpClientConnect, Listener);
 
-            Task.Run(async () =>
-            {
-                var channel = new Channel(this, bufferSize);
+            var channel = new Channel(this, bufferSize);
 
-                if (ConnectedChannels.OpenChannels.TryAdd(channel.Id, channel))
-                    await channel.Open(client);
-            });
+            await channel.Open(client);
         }
 
         public Task Close()
         {
-            return Task.Run(async () => {
+            return Task.Run(async () =>
+            {
                 Running = false;
                 Channel current;
 

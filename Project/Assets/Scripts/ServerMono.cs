@@ -54,11 +54,6 @@ public class ServerMono : MonoBehaviour
     {
         var data = Encoding.UTF8.GetString(e.Message, 0, e.Message.Length);
 
-        Debug.Log($"Server received message: {data}");
-
-        if (data == "CLOSE")
-        {
-            e.Channel.Close();
-        }
+        Debug.Log($"Server received message from {e.Id}: {data}");
     }
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace NetSockets.Client
 {
-    public class ClientSocket : ISocket, IDisposable
+    public class ClientSocket : ISocket, ISender, IDisposable
     {
         private readonly byte[] buffer;
         private IPEndPoint endpoint;
@@ -73,7 +73,7 @@ namespace NetSockets.Client
             }
         }
 
-        private void UdpReceiveCallback(IAsyncResult ar)
+        private async void UdpReceiveCallback(IAsyncResult ar)
         {
             byte[] data = udpClient.EndReceive(ar, ref endpoint);
             udpClient.BeginReceive(UdpReceiveCallback, udpClient);
@@ -83,7 +83,7 @@ namespace NetSockets.Client
                 Message = data
             };
 
-            OnDataIn(result);
+            await OnDataIn(result);
         }
         private void UdpListen()
         {
