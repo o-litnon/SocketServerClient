@@ -60,11 +60,11 @@
     <Compile Include="Assets\NetSockets\Server\ServerSocket.cs" />
     <Compile Include="Assets\NetSockets\Server\DataRetrievedArgs.cs" />
     <Compile Include="Assets\NetSockets\Packet.cs" />
+    <Compile Include="Assets\NetSockets\Client\DataRetrievedArgs.cs" />
+    <Compile Include="Assets\NetSockets\Server\ClientDataArgs.cs" />
     <Compile Include="Assets\NetSockets\Server\Channel.cs" />
     <Compile Include="Assets\NetSockets\Server\Channels.cs" />
     <Compile Include="Assets\NetSockets\ThreadManager.cs" />
-    <Compile Include="Assets\NetSockets\Client\DataRetrievedArgs.cs" />
-    <Compile Include="Assets\NetSockets\Server\ClientDataArgs.cs" />
   </ItemGroup>
   <ItemGroup>
      <None Include="Assets\NetSockets\NetSockets.asmdef" />

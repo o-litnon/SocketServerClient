@@ -28,14 +28,14 @@ namespace NetSockets.Server
             Listener.BeginAcceptTcpClient(TcpClientConnect, Listener);
         }
 
-        private async void TcpClientConnect(IAsyncResult ar)
+        private void TcpClientConnect(IAsyncResult ar)
         {
             TcpClient client = Listener.EndAcceptTcpClient(ar);
 
             if (Running)
                 Listener.BeginAcceptTcpClient(TcpClientConnect, Listener);
 
-            await Task.Run(() =>
+            Task.Run(() =>
             {
                 var channel = new Channel(this, bufferSize);
 
@@ -49,12 +49,17 @@ namespace NetSockets.Server
                         ThisChannel = channel
                     });
                 }
-            }); ;
+            });
         }
 
         public void Stop()
         {
             Running = false;
+            Channel current;
+
+            foreach (var item in ConnectedChannels.OpenChannels.Keys)
+                if (ConnectedChannels.OpenChannels.TryGetValue(item, out current))
+                    current.Close();
 
             Listener.Stop();
         }

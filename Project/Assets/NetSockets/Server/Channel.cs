@@ -41,13 +41,15 @@ namespace NetSockets.Server
                         {
                             var args = new DataReceivedArgs()
                             {
-                                Message = buffer.ToArray(),
+                                Message = buffer.Take(position).ToArray(),
                                 ConnectionId = Id,
                                 ThisChannel = this
                             };
 
                             thisServer.OnDataIn(args);
                         }
+
+                        Close();
                     }
                 }
             });

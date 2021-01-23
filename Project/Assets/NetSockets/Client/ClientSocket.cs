@@ -1,9 +1,8 @@
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using UnityEngine;
 
 namespace NetSockets.Client
 {
@@ -16,33 +15,36 @@ namespace NetSockets.Client
         private IPEndPoint endpoint;
 
         public event EventHandler<DataReceivedArgs> DataReceived;
-        public bool isConnected => tcpClient.Client.Connected;
+        public bool isConnected => tcpClient != null && tcpClient.Client != null && tcpClient.Client.Connected 
+            && udpClient != null && udpClient.Client != null && udpClient.Client.Connected;
 
         public ClientSocket(string ip, int port, int bufferSize)
         {
             endpoint = new IPEndPoint(IPAddress.Parse(ip), port);
-            tcpClient = new TcpClient
-            {
-                SendBufferSize = bufferSize,
-                ReceiveBufferSize = bufferSize
-            };
-            udpClient = new UdpClient(endpoint);
             buffer = new byte[bufferSize];
         }
 
         public Task Open()
         {
+            if (isConnected)
+                throw new Exception("Client is already connected");
+
+            tcpClient = new TcpClient
+            {
+                SendBufferSize = buffer.Length,
+                ReceiveBufferSize = buffer.Length
+            };
+            udpClient = new UdpClient(endpoint);
+
             var tcpConnecting = tcpClient.ConnectAsync(endpoint.Address, endpoint.Port);
+
+            tcpConnecting.ContinueWith((task, sender) =>
+            {
+                _ = TcpListen();
+            }, tcpConnecting);
+
             udpClient.Connect(endpoint);
             udpClient.BeginReceive(UdpReceiveCallback, udpClient);
-
-            tcpConnecting.ContinueWith((task, state) => {
-                Task.Run(() => {
-                    
-                //setup tcp listeners
-
-                });
-            }, tcpConnecting);
 
             return tcpConnecting;
         }
@@ -52,25 +54,55 @@ namespace NetSockets.Client
             byte[] data = udpClient.EndReceive(ar, ref endpoint);
             udpClient.BeginReceive(UdpReceiveCallback, udpClient);
 
-            var result = new DataReceivedArgs {
+            var result = new DataReceivedArgs
+            {
                 Message = data
             };
 
-            DataReceived?.Invoke(this, result);
+            OnDataIn(result);
+        }
+
+        private Task TcpListen()
+        {
+            return Task.Run(() =>
+            {
+                using (var stream = tcpClient.GetStream())
+                {
+                    int position;
+
+                    while (isConnected)
+                    {
+                        while (isConnected && (position = stream.Read(buffer, 0, buffer.Length)) != 0)
+                        {
+                            var args = new DataReceivedArgs()
+                            {
+                                Message = buffer.Take(position).ToArray()
+                            };
+
+                            OnDataIn(args);
+                        }
+                    }
+                }
+            });
+        }
+
+        public void OnDataIn(DataReceivedArgs e)
+        {
+            DataReceived?.Invoke(this, e);
         }
 
         public void Close()
         {
-            tcpClient.Client.Disconnect(true);
+            if (isConnected)
+            {
+                tcpClient.Close();
+                udpClient.Close();
+            }
         }
 
         public void Dispose()
         {
-            tcpClient.Close();
-            tcpClient.Dispose();
-
-            udpClient.Close();
-            udpClient.Dispose();
+            Close();
         }
     }
 }

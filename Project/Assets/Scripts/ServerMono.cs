@@ -1,5 +1,4 @@
 using NetSockets.Server;
-using System.Linq;
 using System.Text;
 using UnityEngine;
 
@@ -18,7 +17,7 @@ public class ServerMono : MonoBehaviour
         Server.ClientReceived += server_OnClientIn;
 
         Server.Start();
-        Debug.Log("Server has started.");
+        Debug.Log("Server has started...");
     }
 
     private void OnDestroy()
@@ -33,22 +32,24 @@ public class ServerMono : MonoBehaviour
     {
         var data = Encoding.UTF8.GetBytes(message);
 
-        if (Server.ConnectedChannels.OpenChannels.Count > 0)
-            Server.ConnectedChannels.OpenChannels.First().Value.Send(data);
+        Debug.Log($"Sending to {Server.ConnectedChannels.OpenChannels.Count } clients");
+
+        foreach (var item in Server.ConnectedChannels.OpenChannels)
+            item.Value.Send(data);
     }
 
     private void server_OnClientIn(object sender, ClientDataArgs e)
     {
-        Debug.Log($"Client connected with Id: {e.ConnectionId}");
+        Debug.Log($"Client connected with Id: {e.ConnectionId}, from {Server.ConnectedChannels.OpenChannels.Count } clients");
 
-        e.ThisChannel.Send(Encoding.UTF8.GetBytes("SONNECTION SUCCESS"));
+        e.ThisChannel.Send(Encoding.UTF8.GetBytes("CONNECTION SUCCESS"));
     }
 
     private void server_OnDataIn(object sender, DataReceivedArgs e)
     {
         var data = Encoding.UTF8.GetString(e.Message, 0, e.Message.Length);
 
-        Debug.Log($"Received message: {data}");
+        Debug.Log($"Server received message: {data}");
 
         e.ThisChannel.Send(Encoding.UTF8.GetBytes("MESSAGE RECEIVED"));
 
