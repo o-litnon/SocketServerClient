@@ -27,7 +27,7 @@ public class ClientMono : MonoBehaviour
     {
         var data = Encoding.UTF8.GetBytes(message);
 
-        //Socket.Send(data);
+        Socket.Send(data);
     }
 
     public void Connect()

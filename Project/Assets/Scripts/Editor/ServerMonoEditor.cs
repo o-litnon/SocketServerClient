@@ -14,6 +14,9 @@ public class ServerMonoEditor : Editor
 
         driver = (ServerMono)target;
 
+        var count = driver.Server != null ? driver.Server.ConnectedChannels.OpenChannels.Count : 0;
+        GUILayout.Label($"Has {count} connected clients");
+
         message = EditorGUILayout.TextField("Test message:", message);
 
         if (!string.IsNullOrEmpty(message) && GUILayout.Button("Send"))

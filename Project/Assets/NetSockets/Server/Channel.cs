@@ -35,22 +35,19 @@ namespace NetSockets.Server
                 {
                     int position;
 
-                    while (isOpen)
+                    while (isOpen && (position = stream.Read(buffer, 0, buffer.Length)) != 0)
                     {
-                        while (isOpen && (position = stream.Read(buffer, 0, buffer.Length)) != 0)
+                        var args = new DataReceivedArgs()
                         {
-                            var args = new DataReceivedArgs()
-                            {
-                                Message = buffer.Take(position).ToArray(),
-                                ConnectionId = Id,
-                                ThisChannel = this
-                            };
+                            Message = buffer.Take(position).ToArray(),
+                            ConnectionId = Id,
+                            ThisChannel = this
+                        };
 
-                            thisServer.OnDataIn(args);
-                        }
-
-                        Close();
+                        thisServer.OnDataIn(args);
                     }
+
+                    Close();
                 }
             });
         }

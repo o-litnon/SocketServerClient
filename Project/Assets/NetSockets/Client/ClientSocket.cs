@@ -9,13 +9,14 @@ namespace NetSockets.Client
     public class ClientSocket : IDisposable
     {
         public bool Running { get; set; }
-        private TcpClient tcpClient;
-        private UdpClient udpClient;
         private readonly byte[] buffer;
         private IPEndPoint endpoint;
+        private TcpClient tcpClient;
+        private UdpClient udpClient;
+        private NetworkStream stream;
 
         public event EventHandler<DataReceivedArgs> DataReceived;
-        public bool isConnected => tcpClient != null && tcpClient.Client != null && tcpClient.Client.Connected 
+        public bool isConnected => tcpClient != null && tcpClient.Client != null && tcpClient.Client.Connected
             && udpClient != null && udpClient.Client != null && udpClient.Client.Connected;
 
         public ClientSocket(string ip, int port, int bufferSize)
@@ -66,7 +67,7 @@ namespace NetSockets.Client
         {
             return Task.Run(() =>
             {
-                using (var stream = tcpClient.GetStream())
+                using (stream = tcpClient.GetStream())
                 {
                     int position;
 
@@ -84,6 +85,14 @@ namespace NetSockets.Client
                     }
                 }
             });
+        }
+
+        public void Send(byte[] data)
+        {
+            if (!isConnected)
+                throw new Exception("Client isn't connected");
+
+            stream.Write(data, 0, data.Length);
         }
 
         public void OnDataIn(DataReceivedArgs e)
