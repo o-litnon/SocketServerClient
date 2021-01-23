@@ -1,0 +1,10 @@
+Builds/
+!*.manifest.json
+!*ProjectSettings.asset
+**/ProjectSettings
+**/Library
+Project/**/Logs
+Project/**/Temp
+Project/Packages/packages-lock.json
+Project/**/obj/Debug
+**/.vs
