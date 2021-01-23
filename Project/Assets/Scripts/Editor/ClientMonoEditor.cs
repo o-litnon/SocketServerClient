@@ -14,7 +14,7 @@ public class ClientMonoEditor : Editor
 
         driver = (ClientMono)target;
 
-        GUILayout.Label($"Is Connected: {driver.Socket?.isConnected}");
+        GUILayout.Label($"Is Connected: {driver.Socket?.Running}");
         message = EditorGUILayout.TextField("Test message:", message);
 
         if (!string.IsNullOrEmpty(message))

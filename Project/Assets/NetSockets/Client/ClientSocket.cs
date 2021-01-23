@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace NetSockets.Client
 {
-    public class ClientSocket : IDisposable
+    public class ClientSocket : ISocket, IDisposable
     {
-        public bool Running { get; set; }
         private readonly byte[] buffer;
         private IPEndPoint endpoint;
         private TcpClient tcpClient;
@@ -16,7 +15,7 @@ namespace NetSockets.Client
         private NetworkStream stream;
 
         public event EventHandler<DataReceivedArgs> DataReceived;
-        public bool isConnected => tcpClient != null && tcpClient.Client != null && tcpClient.Client.Connected
+        public bool Running => tcpClient != null && tcpClient.Client != null && tcpClient.Client.Connected
             && (udpClient == null || udpClient.Client != null && udpClient.Client.Connected);
 
         public ClientSocket(string ip, int port, int bufferSize)
@@ -27,7 +26,7 @@ namespace NetSockets.Client
 
         public Task Open()
         {
-            if (isConnected)
+            if (Running)
                 return Task.CompletedTask;
 
             tcpClient = new TcpClient
@@ -47,18 +46,21 @@ namespace NetSockets.Client
             return tcpConnecting;
         }
 
-        public void Close()
+        public Task Close()
         {
-            if (isConnected)
-            {
-                tcpClient.Close();
-                udpClient.Close();
-            }
+            if (!Running)
+                return Task.CompletedTask;
+            else
+                return Task.Run(() =>
+                {
+                    tcpClient.Close();
+                    udpClient.Close();
+                });
         }
 
         public Task Send(byte[] data, ConnectionType type = ConnectionType.TCP)
         {
-            if (!isConnected)
+            if (!Running)
                 return Task.CompletedTask;
 
             switch (type)
@@ -98,9 +100,9 @@ namespace NetSockets.Client
                 {
                     int position;
 
-                    while (isConnected)
+                    while (Running)
                     {
-                        while (isConnected && (position = stream.Read(buffer, 0, buffer.Length)) != 0)
+                        while (Running && (position = stream.Read(buffer, 0, buffer.Length)) != 0)
                         {
                             var args = new DataReceivedArgs()
                             {
@@ -121,7 +123,7 @@ namespace NetSockets.Client
 
         public void Dispose()
         {
-            Close();
+            Close().Wait();
         }
     }
 }

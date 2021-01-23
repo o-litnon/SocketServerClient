@@ -18,7 +18,7 @@ public class ServerMono : MonoBehaviour
         Server.ClientConnected += server_OnClientIn;
         Server.ClientDisconnected += server_OnClientOut;
 
-        Server.Start();
+        Server.Open();
         Debug.Log("Server has started...");
     }
 
@@ -26,7 +26,7 @@ public class ServerMono : MonoBehaviour
     {
         if (Server != null)
         {
-            Server.Stop();
+            Server.Close();
         }
     }
 

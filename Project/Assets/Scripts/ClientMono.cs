@@ -50,7 +50,6 @@ public class ClientMono : MonoBehaviour
     {
         if (Socket != null)
         {
-            Socket.Close();
             Socket.Dispose();
         }
     }

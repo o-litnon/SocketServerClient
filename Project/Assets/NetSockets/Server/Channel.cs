@@ -13,7 +13,7 @@ namespace NetSockets.Server
         private TcpClient thisClient;
         private readonly byte[] buffer;
         private NetworkStream stream;
-        public bool isConnected => thisClient != null && thisClient.Client != null && thisClient.Client.Connected;
+        public bool Running => thisClient != null && thisClient.Client != null && thisClient.Client.Connected;
 
         public Channel(ServerSocket myServer, int bufferSize)
         {
@@ -22,45 +22,43 @@ namespace NetSockets.Server
             Id = Guid.NewGuid().ToString();
         }
 
-        public void Open(TcpClient client)
+        public Task Open(TcpClient client)
         {
-            if (isConnected)
-                return;
+            if (Running)
+                return Task.CompletedTask;
 
             thisClient = client;
+            stream = thisClient.GetStream();
 
-            Task.Run(() =>
+            Task.Run(async () =>
             {
-                using (stream = thisClient.GetStream())
+                int position;
+
+                while (Running && (position = stream.Read(buffer, 0, buffer.Length)) != 0)
                 {
-                    thisServer.OnClientConnected(new ClientDataArgs
+                    var args = new DataReceivedArgs()
                     {
+                        Message = buffer.Take(position).ToArray(),
                         Id = Id,
                         Channel = this
-                    });
+                    };
 
-                    int position;
-
-                    while (isConnected && (position = stream.Read(buffer, 0, buffer.Length)) != 0)
-                    {
-                        var args = new DataReceivedArgs()
-                        {
-                            Message = buffer.Take(position).ToArray(),
-                            Id = Id,
-                            Channel = this
-                        };
-
-                        thisServer.OnDataIn(args);
-                    }
-
-                    Close();
+                    await thisServer.OnDataIn(args);
                 }
+
+                await Close();
+            });
+
+            return thisServer.OnClientConnected(new ClientDataArgs
+            {
+                Id = Id,
+                Channel = this
             });
         }
 
         public Task Send(byte[] data, ConnectionType type = ConnectionType.TCP)
         {
-            if (!isConnected)
+            if (!Running)
                 return Task.CompletedTask;
 
             switch (type)
@@ -73,14 +71,14 @@ namespace NetSockets.Server
             }
         }
 
-        public void Close()
+        public Task Close()
         {
             stream.Close();
             thisClient.Close();
             thisClient.Dispose();
             thisServer.ConnectedChannels.OpenChannels.TryRemove(Id, out Channel removedChannel);
 
-            thisServer.OnClientDisconnected(new ClientDataArgs
+            return thisServer.OnClientDisconnected(new ClientDataArgs
             {
                 Id = Id,
                 Channel = this
@@ -89,7 +87,7 @@ namespace NetSockets.Server
 
         public void Dispose()
         {
-            Close();
+            Close().Wait();
 
             GC.SuppressFinalize(this);
         }

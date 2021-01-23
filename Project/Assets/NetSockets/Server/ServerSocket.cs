@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace NetSockets.Server
 {
-    public class ServerSocket
+    public class ServerSocket: ISocket
     {
         public bool Running { get; private set; }
         public event EventHandler<DataReceivedArgs> DataReceived;
@@ -25,12 +25,14 @@ namespace NetSockets.Server
             udpClient = new UdpClient(endpoint);
         }
 
-        public void Start()
+        public Task Open()
         {
-            Listener.Start();
-            Running = true;
-            Listener.BeginAcceptTcpClient(TcpClientConnect, Listener);
-            udpClient.BeginReceive(UdpReceiveCallback, udpClient);
+            return Task.Run(() => {
+                Listener.Start();
+                Running = true;
+                Listener.BeginAcceptTcpClient(TcpClientConnect, Listener);
+                udpClient.BeginReceive(UdpReceiveCallback, udpClient);
+            });
         }
 
         private void UdpReceiveCallback(IAsyncResult ar)
@@ -53,25 +55,27 @@ namespace NetSockets.Server
             if (Running)
                 Listener.BeginAcceptTcpClient(TcpClientConnect, Listener);
 
-            Task.Run(() =>
+            Task.Run(async () =>
             {
                 var channel = new Channel(this, bufferSize);
 
                 if (ConnectedChannels.OpenChannels.TryAdd(channel.Id, channel))
-                    channel.Open(client);
+                    await channel.Open(client);
             });
         }
 
-        public void Stop()
+        public Task Close()
         {
-            Running = false;
-            Channel current;
+            return Task.Run(async () => {
+                Running = false;
+                Channel current;
 
-            foreach (var item in ConnectedChannels.OpenChannels.Keys)
-                if (ConnectedChannels.OpenChannels.TryGetValue(item, out current))
-                    current.Close();
+                foreach (var item in ConnectedChannels.OpenChannels.Keys)
+                    if (ConnectedChannels.OpenChannels.TryGetValue(item, out current))
+                        await current.Close();
 
-            Listener.Stop();
+                Listener.Stop();
+            });
         }
 
         internal Task OnDataIn(DataReceivedArgs e)
