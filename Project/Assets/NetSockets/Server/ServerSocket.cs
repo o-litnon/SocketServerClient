@@ -30,13 +30,10 @@ namespace NetSockets.Server
                 while (Running)
                 {
                     var client = await Listener.AcceptTcpClientAsync();
-                    await Task.Run(() =>
-                    {
-                        var channel = new Channel(this);
+                    var channel = new Channel(this);
 
-                        if (ConnectedChannels.OpenChannels.TryAdd(channel.Id, channel))
-                            channel.Open(client);
-                    });
+                    if (ConnectedChannels.OpenChannels.TryAdd(channel.Id, channel))
+                        _ = channel.Open(client);
                 }
 
             }
