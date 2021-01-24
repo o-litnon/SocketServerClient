@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace NetSockets.Client
 {
-    public class ClientSocket : ISocket, ISender, IDisposable
+    public class ClientSocket : ISocket, ISender
     {
         private readonly byte[] buffer;
         private IPEndPoint endpoint;
@@ -37,16 +37,6 @@ namespace NetSockets.Client
             await tcpClient.ConnectAsync(endpoint.Address, endpoint.Port);
 
             StartListeners();
-        }
-
-        public virtual async Task Close()
-        {
-            if (Running)
-                await Task.Run(() =>
-                {
-                    tcpClient.Close();
-                    udpClient.Close();
-                });
         }
 
         public virtual async Task Send(byte[] data, ConnectionType type = ConnectionType.TCP)
@@ -110,10 +100,15 @@ namespace NetSockets.Client
             return Task.Run(() => DataReceived?.Invoke(this, e));
         }
 
-        public virtual void Dispose()
+        public virtual Task Close()
         {
-            Close().Wait();
-            tcpClient.EndConnect(null);
+            if (Running)
+            {
+                tcpClient.Close();
+                udpClient.Close();
+            }
+
+            return Task.CompletedTask;
         }
     }
 }

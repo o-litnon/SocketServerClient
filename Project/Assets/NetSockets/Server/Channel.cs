@@ -104,12 +104,7 @@ namespace NetSockets.Server
 
         public void Dispose()
         {
-            Close().Wait();
-
             thisClient.Dispose();
-            thisClient.EndConnect(null);
-
-            GC.SuppressFinalize(this);
         }
     }
 }

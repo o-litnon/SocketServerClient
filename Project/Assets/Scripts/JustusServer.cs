@@ -42,12 +42,11 @@ public class JustusServer : ServerSocket
 
         Debugging.Log($"Client connected with Id: {IdMap[e.Id]}");
 
-        using (var packet = new Packet())
+        using (var packet = new Packet(IdMap[e.Id]))
         {
-            packet.Write(IdMap[e.Id]);
             packet.Write("Welcome to the server");
 
-            _ = e.Channel.Send(packet.ToArray());
+            _ = e.Channel.Send(packet.ToArray(), ConnectionType.TCP);
         }
     }
 

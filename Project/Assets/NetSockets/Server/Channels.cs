@@ -50,21 +50,18 @@ namespace NetSockets.Server
             return result;
         }
 
-        public Task ActivatePending()
+        public async Task ActivatePending()
         {
-            return Task.Run(async () =>
-            {
-                while (!IsFull && PendingChannels.Count > 0)
-                    if (PendingChannels.TryDequeue(out Channel channel) && channel.Running)
-                        if (ActiveChannels.TryAdd(channel.Id, channel))
-                            await thisServer.OnClientActivated(new ClientDataArgs
-                            {
-                                Id = channel.Id,
-                                Channel = channel
-                            });
-                        else
-                            PendingChannels.Enqueue(channel);
-            });
+            while (!IsFull && PendingChannels.Count > 0)
+                if (PendingChannels.TryDequeue(out Channel channel) && channel.Running)
+                    if (ActiveChannels.TryAdd(channel.Id, channel))
+                        await thisServer.OnClientActivated(new ClientDataArgs
+                        {
+                            Id = channel.Id,
+                            Channel = channel
+                        });
+                    else
+                        PendingChannels.Enqueue(channel);
         }
     }
 }

@@ -27,21 +27,21 @@ public class ClientMonoEditor : Editor
                     if (GUILayout.Button("Send TCP"))
                     {
                         packet.Write(message + " using TCP");
-                        driver.Socket.Send(packet.ToArray(), ConnectionType.TCP);
+                        _ = driver.Socket.Send(packet.ToArray(), ConnectionType.TCP);
                     }
 
                     if (GUILayout.Button("Send UDP"))
                     {
                         packet.Write(message + " using UDP");
-                        driver.Socket.Send(packet.ToArray(), ConnectionType.UDP);
+                        _ = driver.Socket.Send(packet.ToArray(), ConnectionType.UDP);
                     }
                 }
             }
 
             if (GUILayout.Button("Connect"))
-                driver.Socket.Open();
+                _ = driver.Socket.Open();
             if (GUILayout.Button("Disconnect"))
-                driver.Socket.Close();
+                _ = driver.Socket.Close();
         }
 
         base.OnInspectorGUI();

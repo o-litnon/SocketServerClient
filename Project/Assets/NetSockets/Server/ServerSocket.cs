@@ -16,7 +16,7 @@ namespace NetSockets.Server
         public readonly Channels ConnectedChannels;
         public readonly int bufferSize;
         private readonly TcpListener Listener;
-        internal readonly UdpClient udpClient;
+        internal UdpClient udpClient;
 
         public ServerSocket(string ip, int port, int bufferSize = 4096, int maxPlayers = 0)
         {
@@ -24,26 +24,31 @@ namespace NetSockets.Server
             this.bufferSize = bufferSize;
             ConnectedChannels = new Channels(this, maxPlayers);
             Listener = new TcpListener(endpoint);
-            udpClient = new UdpClient(endpoint);
         }
 
         public virtual Task Open()
         {
-            return Task.Run(() =>
+            if (!Running)
             {
                 Running = true;
                 Listener.Start();
                 Listener.BeginAcceptTcpClient(TcpClientConnect, Listener);
+
+                udpClient = new UdpClient((IPEndPoint)Listener.LocalEndpoint);
                 udpClient.BeginReceive(UdpReceiveCallback, udpClient);
-            });
+            }
+
+            return Task.CompletedTask;
         }
 
         private async void UdpReceiveCallback(IAsyncResult ar)
         {
             IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Any, 0);
+
             byte[] data = udpClient.EndReceive(ar, ref clientEndPoint);
 
-            udpClient.BeginReceive(UdpReceiveCallback, udpClient);
+            if (Running)
+                udpClient.BeginReceive(UdpReceiveCallback, udpClient);
 
             var channel = ConnectedChannels.OpenChannels.FirstOrDefault(d => d.Value.RemoteEndpoint.Equals(clientEndPoint));
 
@@ -67,9 +72,9 @@ namespace NetSockets.Server
             await channel.Open(client);
         }
 
-        public virtual Task Close()
+        public virtual async Task Close()
         {
-            return Task.Run(async () =>
+            if (Running)
             {
                 Running = false;
 
@@ -78,7 +83,8 @@ namespace NetSockets.Server
                         await current.Close();
 
                 Listener.Stop();
-            });
+                udpClient.Close();
+            }
         }
 
         internal virtual Task OnDataIn(DataReceivedArgs e)
