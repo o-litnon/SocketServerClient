@@ -15,7 +15,7 @@ namespace NetSockets.Client
         private NetworkStream stream;
 
         public event EventHandler<DataReceivedArgs> DataReceived;
-        public bool Running => tcpClient != null && tcpClient.Client != null && tcpClient.Client.Connected
+        public bool Running => tcpClient != null && tcpClient.Connected
             && (udpClient == null || udpClient.Client != null && udpClient.Client.Connected);
 
         public ClientSocket(string ip, int port, int bufferSize)
@@ -80,24 +80,23 @@ namespace NetSockets.Client
 
         private void TcpListen()
         {
-            Task.Run(() =>
+            Task.Run(async () =>
             {
                 using (stream = tcpClient.GetStream())
                 {
                     int position;
 
-                    while (Running)
+                    while (Running && (position = stream.Read(buffer, 0, buffer.Length)) != 0)
                     {
-                        while (Running && (position = stream.Read(buffer, 0, buffer.Length)) != 0)
+                        var args = new DataReceivedArgs()
                         {
-                            var args = new DataReceivedArgs()
-                            {
-                                Message = buffer.Take(position).ToArray()
-                            };
+                            Message = buffer.Take(position).ToArray()
+                        };
 
-                            OnDataIn(args);
-                        }
+                        await OnDataIn(args);
                     }
+
+                    await Close();
                 }
             });
         }

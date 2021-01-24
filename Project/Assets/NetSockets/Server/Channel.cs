@@ -33,26 +33,8 @@ namespace NetSockets.Server
 
             thisClient = client;
             RemoteEndpoint = (IPEndPoint)thisClient.Client.RemoteEndPoint;
-            stream = thisClient.GetStream();
 
-            _ = Task.Run(async () =>
-            {
-                int position;
-
-                while (Running && (position = stream.Read(buffer, 0, buffer.Length)) != 0)
-                {
-                    var args = new DataReceivedArgs()
-                    {
-                        Message = buffer.Take(position).ToArray(),
-                        Id = Id,
-                        Channel = this
-                    };
-
-                    await thisServer.OnDataIn(args);
-                }
-
-                await Close();
-            });
+            TcpListen();
 
             await thisServer.OnClientConnected(new ClientDataArgs
             {
@@ -61,6 +43,31 @@ namespace NetSockets.Server
             });
 
             await thisServer.ConnectedChannels.ActivatePending();
+        }
+
+        private void TcpListen()
+        {
+            Task.Run(async () =>
+            {
+                using (stream = thisClient.GetStream())
+                {
+                    int position;
+
+                    while (Running && (position = stream.Read(buffer, 0, buffer.Length)) != 0)
+                    {
+                        var args = new DataReceivedArgs()
+                        {
+                            Message = buffer.Take(position).ToArray(),
+                            Id = Id,
+                            Channel = this
+                        };
+
+                        await thisServer.OnDataIn(args);
+                    }
+
+                    await Close();
+                }
+            });
         }
 
         public Task Send(byte[] data, ConnectionType type = ConnectionType.TCP)
