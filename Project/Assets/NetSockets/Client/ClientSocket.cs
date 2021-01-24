@@ -70,13 +70,6 @@ namespace NetSockets.Client
                     return stream.WriteAsync(data, 0, data.Length);
             }
         }
-        private void UdpListen()
-        {
-            udpClient = new UdpClient((IPEndPoint)tcpClient.Client.LocalEndPoint);
-
-            udpClient.Connect(endpoint);
-            udpClient.BeginReceive(UdpReceiveCallback, udpClient);
-        }
 
         private void TcpListen()
         {
@@ -86,7 +79,7 @@ namespace NetSockets.Client
                 {
                     int position;
 
-                    while (Running && (position = stream.Read(buffer, 0, buffer.Length)) != 0)
+                    while (Running && (position = await stream.ReadAsync(buffer, 0, buffer.Length)) != 0)
                     {
                         var args = new DataReceivedArgs()
                         {
@@ -99,6 +92,13 @@ namespace NetSockets.Client
                     await Close();
                 }
             });
+        }
+        private void UdpListen()
+        {
+            udpClient = new UdpClient((IPEndPoint)tcpClient.Client.LocalEndPoint);
+
+            udpClient.Connect(endpoint);
+            udpClient.BeginReceive(UdpReceiveCallback, udpClient);
         }
 
         private async void UdpReceiveCallback(IAsyncResult ar)

@@ -53,7 +53,7 @@ namespace NetSockets.Server
                 {
                     int position;
 
-                    while (Running && (position = stream.Read(buffer, 0, buffer.Length)) != 0)
+                    while (Running && (position = await stream.ReadAsync(buffer, 0, buffer.Length)) != 0)
                     {
                         var args = new DataReceivedArgs()
                         {
