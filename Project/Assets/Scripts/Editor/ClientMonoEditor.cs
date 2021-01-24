@@ -13,11 +13,15 @@ public class ClientMonoEditor : Editor
 
         driver = (ClientMono)target;
 
-        if (driver.Socket != null)
+        if (driver.Socket == null)
+            base.OnInspectorGUI();
+        else
         {
-            GUILayout.Label($"Id: {driver.Socket.Id?.ToString()}");
             GUILayout.Label($"Is Connected: {driver.Socket.Running}");
+            if (driver.Socket.Running)
+                GUILayout.Label($"Id: {driver.Socket.Id?.ToString()}");
 
+            EditorGUILayout.LabelField("Testing", EditorStyles.boldLabel);
             message = EditorGUILayout.TextField("Test message:", message);
 
             if (!string.IsNullOrEmpty(message))
@@ -43,7 +47,5 @@ public class ClientMonoEditor : Editor
             if (GUILayout.Button("Disconnect"))
                 _ = driver.Socket.Close();
         }
-
-        base.OnInspectorGUI();
     }
 }

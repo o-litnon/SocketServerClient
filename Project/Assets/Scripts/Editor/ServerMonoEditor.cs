@@ -15,11 +15,19 @@ public class ServerMonoEditor : Editor
 
         driver = (ServerMono)target;
 
-        if (driver.Server != null)
+        if (driver.Server == null)
+            base.OnInspectorGUI();
+        else
         {
+            EditorGUILayout.LabelField("Game lobby", EditorStyles.boldLabel);
             GUILayout.Label($"Has {driver.Server.ConnectedChannels.OpenChannels.Count} connected clients");
             GUILayout.Label($"Has {driver.Server.ConnectedChannels.ActiveChannels.Count}/{driver.Server.ConnectedChannels.MaxPlayers} active clients");
             GUILayout.Label($"Has {driver.Server.ConnectedChannels.PendingChannels.Count} pending clients");
+
+            GUILayout.Label("Max active players");
+            driver.maxPlayers = EditorGUILayout.IntSlider(driver.maxPlayers, -1, 100);
+
+            EditorGUILayout.LabelField("Testing", EditorStyles.boldLabel);
 
             message = EditorGUILayout.TextField("Test message:", message);
 
@@ -40,7 +48,5 @@ public class ServerMonoEditor : Editor
                 }
             }
         }
-
-        base.OnInspectorGUI();
     }
 }

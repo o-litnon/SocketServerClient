@@ -10,8 +10,8 @@ namespace NetSockets.Server
         public ConcurrentDictionary<string, Channel> OpenChannels { get; private set; }
         public ConcurrentDictionary<string, Channel> ActiveChannels { get; private set; }
         public ConcurrentQueue<Channel> PendingChannels { get; private set; }
-        public bool IsFull => MaxPlayers > 0 && ActiveChannels.Count >= MaxPlayers;
-        public readonly int MaxPlayers;
+        public bool IsFull => MaxPlayers >= 0 && ActiveChannels.Count >= MaxPlayers;
+        public int MaxPlayers { get; set; }
 
         private readonly ServerSocket thisServer;
 

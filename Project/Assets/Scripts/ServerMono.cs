@@ -16,9 +16,18 @@ public class ServerMono : MonoBehaviour
 
         if (!Server.Running)
         {
-            await  Server.Open();
+            await Server.Open();
 
             Debugging.Log("Server started...");
+        }
+    }
+
+    private void Update()
+    {
+        if (Server.ConnectedChannels.MaxPlayers != maxPlayers)
+        {
+            Server.ConnectedChannels.MaxPlayers = maxPlayers;
+            Server.ConnectedChannels.ActivatePending();
         }
     }
 
