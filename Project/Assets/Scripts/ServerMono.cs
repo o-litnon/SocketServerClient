@@ -80,8 +80,11 @@ public class JustusServer : ServerSocket
 
     private void server_OnDataIn(object sender, DataReceivedArgs e)
     {
-        var data = Encoding.UTF8.GetString(e.Message, 0, e.Message.Length);
+        using (var packet = new Packet(e.Message))
+        {
+            var data = packet.ReadString();
 
-        Debug.Log($"Server received message from {e.Id}: {data}");
+            Debug.Log($"Server received message from {e.Id}: {data}");
+        }
     }
 }

@@ -9,7 +9,6 @@ public class ClientMono : MonoBehaviour
     public int port = 7777;
     public int bufferSize = 4096;
     public JustusClient Socket;
-    public string Id;
 
     void Start()
     {
@@ -49,6 +48,9 @@ public class JustusClient : ClientSocket
 
     public override Task Open()
     {
+        if (Running)
+            return Task.CompletedTask;
+
         Id = string.Empty;
 
         return base.Open();

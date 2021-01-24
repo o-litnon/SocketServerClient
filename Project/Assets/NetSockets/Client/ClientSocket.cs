@@ -66,7 +66,7 @@ namespace NetSockets.Client
             switch (type)
             {
                 case ConnectionType.UDP:
-                    return udpClient.SendAsync(data, data.Length, endpoint);
+                    return udpClient.SendAsync(data, data.Length);
                 case ConnectionType.TCP:
                 default:
                     return stream.WriteAsync(data, 0, data.Length);
