@@ -37,13 +37,11 @@ namespace NetSockets.Client
 
             var tcpConnecting = tcpClient.ConnectAsync(endpoint.Address, endpoint.Port);
 
-            tcpConnecting.ContinueWith((task, sender) =>
+            return tcpConnecting.ContinueWith((task, sender) =>
             {
                 UdpListen();
                 TcpListen();
             }, tcpConnecting);
-
-            return tcpConnecting;
         }
 
         public virtual Task Close()
@@ -125,6 +123,7 @@ namespace NetSockets.Client
         public virtual void Dispose()
         {
             Close().Wait();
+            tcpClient.EndConnect(null);
         }
     }
 }

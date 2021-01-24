@@ -82,7 +82,6 @@ namespace NetSockets.Server
         {
             stream.Close();
             thisClient.Close();
-            thisClient.Dispose();
             thisServer.ConnectedChannels.TryRemove(Id, out Channel removedChannel);
 
             await thisServer.OnClientDisconnected(new ClientDataArgs
@@ -97,6 +96,9 @@ namespace NetSockets.Server
         public void Dispose()
         {
             Close().Wait();
+
+            thisClient.Dispose();
+            thisClient.EndConnect(null);
 
             GC.SuppressFinalize(this);
         }

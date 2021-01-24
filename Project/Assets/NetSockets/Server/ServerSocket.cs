@@ -72,10 +72,9 @@ namespace NetSockets.Server
             return Task.Run(async () =>
             {
                 Running = false;
-                Channel current;
 
                 foreach (var item in ConnectedChannels.OpenChannels.Keys)
-                    if (ConnectedChannels.OpenChannels.TryGetValue(item, out current))
+                    if (ConnectedChannels.OpenChannels.TryGetValue(item, out Channel current))
                         await current.Close();
 
                 Listener.Stop();
