@@ -139,7 +139,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &149266020
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -153,7 +153,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ip: 127.0.0.1
-  port: 25565
+  port: 25564
   bufferSize: 4096
   maxPlayers: 0
 --- !u!4 &149266021
@@ -214,9 +214,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ip: 127.0.0.1
-  port: 25565
+  port: 25564
   bufferSize: 4096
-  connectOnStart: 0
+  connectOnStart: 1
 --- !u!1 &965908805
 GameObject:
   m_ObjectHideFlags: 0

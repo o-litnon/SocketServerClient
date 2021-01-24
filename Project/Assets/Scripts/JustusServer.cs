@@ -1,5 +1,6 @@
 using NetSockets;
 using NetSockets.Server;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -39,7 +40,7 @@ public class JustusServer : ServerSocket
     {
         IdMap[e.Id] = NewId();
 
-        Debug.Log($"Client connected with Id: {IdMap[e.Id]}");
+        Debugging.Log($"Client connected with Id: {IdMap[e.Id]}");
 
         using (var packet = new Packet())
         {
@@ -52,12 +53,12 @@ public class JustusServer : ServerSocket
 
     private void server_OnClientActivated(object sender, ClientDataArgs e)
     {
-        Debug.Log($"Client entered the game with Id: {IdMap[e.Id]}");
+        Debugging.Log($"Client entered the game with Id: {IdMap[e.Id]}");
     }
 
     private void server_OnClientOut(object sender, ClientDataArgs e)
     {
-        Debug.Log($"Client disconnected with Id: {IdMap[e.Id]}");
+        Debugging.Log($"Client disconnected with Id: {IdMap[e.Id]}");
 
         IdMap.Remove(e.Id);
     }
@@ -68,7 +69,7 @@ public class JustusServer : ServerSocket
         {
             var data = packet.ReadString();
 
-            Debug.Log($"Server received message from {IdMap[e.Id]}: {data}");
+            Debugging.Log($"Server received message from {IdMap[e.Id]}: {data}");
         }
     }
 
@@ -79,6 +80,6 @@ public class JustusServer : ServerSocket
                 if (!IdMap.ContainsValue(i))
                     return i;
 
-        throw new System.Exception("To many players are being hosted");
+        throw new Exception("To many players are being hosted");
     }
 }

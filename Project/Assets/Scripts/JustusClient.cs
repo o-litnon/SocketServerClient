@@ -21,7 +21,7 @@ public class JustusClient : ClientSocket
 
             var data = packet.ReadString();
 
-            Debug.Log($"Client received message: {data}");
+            Debugging.Log($"Client received message: {data}");
         }
     }
 
@@ -35,7 +35,7 @@ public class JustusClient : ClientSocket
         await base.Open();
 
         if (!Running)
-            Debug.LogWarning("Unable to connect to the server.");
+            Debugging.LogWarning("Unable to connect to the server.");
     }
 
     public override Task Close()//without 'async', you must return a Task

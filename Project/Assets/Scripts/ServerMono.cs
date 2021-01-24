@@ -1,3 +1,4 @@
+using NetSockets;
 using UnityEngine;
 
 public class ServerMono : MonoBehaviour
@@ -17,7 +18,7 @@ public class ServerMono : MonoBehaviour
         {
             await  Server.Open();
 
-            Debug.Log("Server started...");
+            Debugging.Log("Server started...");
         }
     }
 
@@ -27,7 +28,7 @@ public class ServerMono : MonoBehaviour
         {
             await Server.Close();
 
-            Debug.Log("Server stopped...");
+            Debugging.Log("Server stopped...");
         }
     }
 }
