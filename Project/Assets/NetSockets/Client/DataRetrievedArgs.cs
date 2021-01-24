@@ -4,6 +4,6 @@ namespace NetSockets.Client
 {
     public class DataReceivedArgs : EventArgs
     {
-        public byte[] Message { get; set; }
+        public byte[] Data { get; set; }
     }
 }

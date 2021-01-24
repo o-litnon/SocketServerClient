@@ -70,7 +70,7 @@ public class JustusServer : ServerSocket
 
     private void server_OnDataIn(object sender, DataReceivedArgs e)
     {
-        using (var packet = new Packet(e.Message))
+        using (var packet = new Packet(e.Data))
         {
             var data = packet.ReadString();
 

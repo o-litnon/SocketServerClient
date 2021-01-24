@@ -56,7 +56,7 @@ namespace NetSockets.Server
             {
                 Id = channel.Key,
                 Channel = channel.Value,
-                Message = data
+                Data = data
             });
         }
 

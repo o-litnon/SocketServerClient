@@ -57,7 +57,7 @@ namespace NetSockets.Server
                     {
                         var args = new DataReceivedArgs()
                         {
-                            Message = buffer.Take(position).ToArray(),
+                            Data = buffer.Take(position).ToArray(),
                             Id = Id,
                             Channel = this
                         };

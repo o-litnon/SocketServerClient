@@ -13,7 +13,7 @@ public class JustusClient : ClientSocket
 
     private void socket_DataReceived(object sender, DataReceivedArgs e)
     {
-        using (var packet = new Packet(e.Message))
+        using (var packet = new Packet(e.Data))
         {
             if (!Id.HasValue)
             {

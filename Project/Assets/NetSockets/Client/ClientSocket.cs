@@ -71,7 +71,7 @@ namespace NetSockets.Client
                     {
                         var args = new DataReceivedArgs()
                         {
-                            Message = buffer.Take(position).ToArray()
+                            Data = buffer.Take(position).ToArray()
                         };
 
                         await OnDataIn(args);
@@ -91,7 +91,7 @@ namespace NetSockets.Client
 
             var result = new DataReceivedArgs
             {
-                Message = data
+                Data = data
             };
 
             await OnDataIn(result);
