@@ -15,7 +15,7 @@ public class ServerMonoEditor : Editor
 
         driver = (ServerMono)target;
 
-        var count = driver.Server != null ? driver.Server.ConnectedChannels.OpenChannels.Count : 0;
+        var count = ServerMono.Server != null ? ServerMono.Server.ConnectedChannels.OpenChannels.Count : 0;
         GUILayout.Label($"Has {count} connected clients");
 
         message = EditorGUILayout.TextField("Test message:", message);
@@ -23,9 +23,9 @@ public class ServerMonoEditor : Editor
         if (!string.IsNullOrEmpty(message))
         {
             if (GUILayout.Button("Send TCP"))
-                driver.SendTest(message + "using TCP", ConnectionType.TCP);
+                ServerMono.Server.SendAllString(message + "using TCP", ConnectionType.TCP);
             if (GUILayout.Button("Send UDP"))
-                driver.SendTest(message + "using UDP", ConnectionType.UDP);
+                ServerMono.Server.SendAllString(message + "using UDP", ConnectionType.UDP);
         }
 
         base.OnInspectorGUI();

@@ -10,11 +10,11 @@ public class ClientMono : MonoBehaviour
     public int port = 7777;
     public int bufferSize = 4096;
     public ClientSocket Socket;
+    public string Id;
 
     void Start()
     {
         Socket = new ClientSocket(ip, port, bufferSize);
-
         Socket.DataReceived += socket_DataReceived;
     }
 
@@ -22,12 +22,18 @@ public class ClientMono : MonoBehaviour
     {
         var data = Encoding.UTF8.GetString(e.Message, 0, e.Message.Length);
 
+
+        if (data.Contains("ID:"))
+        {
+            Id = data.Replace("ID:", "");
+        }
+
         Debug.Log($"Client received message: {data}");
     }
 
-    public void SendTest(string message, ConnectionType type )
+    public void SendTest(string message, ConnectionType type)
     {
-        var data = Encoding.UTF8.GetBytes(message);
+        byte[] data = Encoding.UTF8.GetBytes(message);
 
         Socket.Send(data, type);
     }

@@ -46,7 +46,7 @@ namespace NetSockets.Client
             return tcpConnecting;
         }
 
-        public Task Close()
+        public virtual Task Close()
         {
             if (!Running)
                 return Task.CompletedTask;
