@@ -26,7 +26,7 @@ namespace NetSockets.Server
             udpClient = new UdpClient(endpoint);
         }
 
-        public Task Open()
+        public virtual Task Open()
         {
             return Task.Run(() =>
             {
@@ -66,7 +66,7 @@ namespace NetSockets.Server
             await channel.Open(client);
         }
 
-        public Task Close()
+        public virtual Task Close()
         {
             return Task.Run(async () =>
             {
@@ -81,17 +81,17 @@ namespace NetSockets.Server
             });
         }
 
-        internal Task OnDataIn(DataReceivedArgs e)
+        internal virtual Task OnDataIn(DataReceivedArgs e)
         {
             return Task.Run(() => { DataReceived?.Invoke(this, e); });
         }
 
-        internal Task OnClientConnected(ClientDataArgs e)
+        internal virtual Task OnClientConnected(ClientDataArgs e)
         {
             return Task.Run(() => { ClientConnected?.Invoke(this, e); });
         }
 
-        internal Task OnClientDisconnected(ClientDataArgs e)
+        internal virtual Task OnClientDisconnected(ClientDataArgs e)
         {
             return Task.Run(() => { ClientDisconnected?.Invoke(this, e); });
         }

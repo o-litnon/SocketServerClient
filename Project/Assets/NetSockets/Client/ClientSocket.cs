@@ -58,7 +58,7 @@ namespace NetSockets.Client
                 });
         }
 
-        public Task Send(byte[] data, ConnectionType type = ConnectionType.TCP)
+        public virtual Task Send(byte[] data, ConnectionType type = ConnectionType.TCP)
         {
             if (!Running)
                 return Task.CompletedTask;
@@ -122,7 +122,7 @@ namespace NetSockets.Client
             return Task.Run(() => DataReceived?.Invoke(this, e));
         }
 
-        public void Dispose()
+        public virtual void Dispose()
         {
             Close().Wait();
         }
