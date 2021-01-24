@@ -15,8 +15,7 @@ namespace NetSockets.Client
         private NetworkStream stream;
 
         public event EventHandler<DataReceivedArgs> DataReceived;
-        public bool Running => tcpClient != null && tcpClient.Connected
-            && (udpClient == null || udpClient.Client != null && udpClient.Client.Connected);
+        public bool Running => tcpClient != null && tcpClient.Connected;
 
         public ClientSocket(string ip, int port, int bufferSize)
         {
@@ -24,10 +23,10 @@ namespace NetSockets.Client
             buffer = new byte[bufferSize];
         }
 
-        public virtual Task Open()
+        public virtual async Task Open()
         {
             if (Running)
-                return Task.CompletedTask;
+                return;
 
             tcpClient = new TcpClient
             {
@@ -35,44 +34,43 @@ namespace NetSockets.Client
                 ReceiveBufferSize = buffer.Length
             };
 
-            var tcpConnecting = tcpClient.ConnectAsync(endpoint.Address, endpoint.Port);
+            await tcpClient.ConnectAsync(endpoint.Address, endpoint.Port);
 
-            return tcpConnecting.ContinueWith((task, sender) =>
-            {
-                UdpListen();
-                TcpListen();
-            }, tcpConnecting);
+            StartListeners();
         }
 
-        public virtual Task Close()
+        public virtual async Task Close()
         {
-            if (!Running)
-                return Task.CompletedTask;
-            else
-                return Task.Run(() =>
+            if (Running)
+                await Task.Run(() =>
                 {
                     tcpClient.Close();
                     udpClient.Close();
                 });
         }
 
-        public virtual Task Send(byte[] data, ConnectionType type = ConnectionType.TCP)
+        public virtual async Task Send(byte[] data, ConnectionType type = ConnectionType.TCP)
         {
             if (!Running)
-                return Task.CompletedTask;
+                return;
 
             switch (type)
             {
                 case ConnectionType.UDP:
-                    return udpClient.SendAsync(data, data.Length);
+                    await udpClient.SendAsync(data, data.Length, endpoint);
+                    break;
                 case ConnectionType.TCP:
                 default:
-                    return stream.WriteAsync(data, 0, data.Length);
+                    await stream.WriteAsync(data, 0, data.Length);
+                    break;
             }
         }
 
-        private void TcpListen()
+        private void StartListeners()
         {
+            udpClient = new UdpClient((IPEndPoint)tcpClient.Client.LocalEndPoint);
+            udpClient.BeginReceive(UdpReceiveCallback, udpClient);
+
             Task.Run(async () =>
             {
                 using (stream = tcpClient.GetStream())
@@ -92,13 +90,6 @@ namespace NetSockets.Client
                     await Close();
                 }
             });
-        }
-        private void UdpListen()
-        {
-            udpClient = new UdpClient((IPEndPoint)tcpClient.Client.LocalEndPoint);
-
-            udpClient.Connect(endpoint);
-            udpClient.BeginReceive(UdpReceiveCallback, udpClient);
         }
 
         private async void UdpReceiveCallback(IAsyncResult ar)

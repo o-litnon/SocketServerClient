@@ -8,32 +8,26 @@ public class ServerMono : MonoBehaviour
     public int maxPlayers;
     public JustusServer Server;
 
-    void OnEnable()
+    async void OnEnable()
     {
         if (Server == null)
             Server = new JustusServer(ip, port, bufferSize, maxPlayers);
 
         if (!Server.Running)
         {
-            var opening = Server.Open();
+            await  Server.Open();
 
-            opening.ContinueWith(d =>
-            {
-                Debug.Log("Server started...");
-            });
+            Debug.Log("Server started...");
         }
     }
 
-    void OnDisable()
+    async void OnDisable()
     {
         if (Server != null)
         {
-            var closing = Server.Close();
+            await Server.Close();
 
-            closing.ContinueWith(d =>
-            {
-                Debug.Log("Server stopped...");
-            });
+            Debug.Log("Server stopped...");
         }
     }
 }

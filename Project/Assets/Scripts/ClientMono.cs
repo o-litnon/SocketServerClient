@@ -13,17 +13,17 @@ public class ClientMono : MonoBehaviour
         Socket = new JustusClient(ip, port, bufferSize);
     }
 
-    void OnEnable()
+    async void OnEnable()
     {
         if (connectOnStart)
-            Socket.Open();
+            await Socket.Open();
     }
 
-    void OnDisable()
+    async void OnDisable()
     {
         if (Socket != null)
         {
-            Socket.Close();
+            await Socket.Close();
         }
     }
 }

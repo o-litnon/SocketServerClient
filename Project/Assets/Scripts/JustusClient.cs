@@ -25,22 +25,20 @@ public class JustusClient : ClientSocket
         }
     }
 
-    public override Task Open()
+    public override async Task Open()
     {
         if (Running)
-            return Task.CompletedTask;
+            return;
 
         Id = null;
 
-        var connecting = base.Open();
+        await base.Open();
 
-        return connecting.ContinueWith(d => {
-            if (!Running)
-                Debug.LogWarning("Unable to connect to the server.");
-        });
+        if (!Running)
+            Debug.LogWarning("Unable to connect to the server.");
     }
 
-    public override Task Close()
+    public override Task Close()//without 'async', you must return a Task
     {
         Id = null;
 

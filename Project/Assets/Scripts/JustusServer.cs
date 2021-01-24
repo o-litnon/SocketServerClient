@@ -20,19 +20,19 @@ public class JustusServer : ServerSocket
         var bytes = packet.ToArray();
 
         foreach (var item in ConnectedChannels.OpenChannels)
-            item.Value.Send(bytes, type);
+            _ = item.Value.Send(bytes, type);
     }
     public void SendTo(Packet data, ConnectionType type, string id)
     {
         if (ConnectedChannels.OpenChannels.TryGetValue(id, out Channel channel))
-            channel.Send(data.ToArray(), type);
+            _ = channel.Send(data.ToArray(), type);
     }
     public void SendAllExcept(Packet packet, ConnectionType type, string id)
     {
         var bytes = packet.ToArray();
 
         foreach (var item in ConnectedChannels.OpenChannels.Where(d => !d.Key.Equals(id)))
-            item.Value.Send(bytes, type);
+            _ = item.Value.Send(bytes, type);
     }
 
     private void server_OnClientIn(object sender, ClientDataArgs e)
@@ -46,7 +46,7 @@ public class JustusServer : ServerSocket
             packet.Write(IdMap[e.Id]);
             packet.Write("Welcome to the server");
 
-            e.Channel.Send(packet.ToArray());
+            _ = e.Channel.Send(packet.ToArray());
         }
     }
 

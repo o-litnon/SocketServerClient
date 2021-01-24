@@ -34,7 +34,7 @@ namespace NetSockets.Server
             thisClient = client;
             RemoteEndpoint = (IPEndPoint)thisClient.Client.RemoteEndPoint;
 
-            TcpListen();
+            StartListeners();
 
             await thisServer.OnClientConnected(new ClientDataArgs
             {
@@ -45,7 +45,7 @@ namespace NetSockets.Server
             await thisServer.ConnectedChannels.ActivatePending();
         }
 
-        private void TcpListen()
+        private void StartListeners()
         {
             Task.Run(async () =>
             {
@@ -70,18 +70,20 @@ namespace NetSockets.Server
             });
         }
 
-        public Task Send(byte[] data, ConnectionType type = ConnectionType.TCP)
+        public async Task Send(byte[] data, ConnectionType type = ConnectionType.TCP)
         {
             if (!Running)
-                return Task.CompletedTask;
+                return;
 
             switch (type)
             {
                 case ConnectionType.UDP:
-                    return thisServer.udpClient.SendAsync(data, data.Length, RemoteEndpoint);
+                    await thisServer.udpClient.SendAsync(data, data.Length, RemoteEndpoint);
+                    break;
                 case ConnectionType.TCP:
                 default:
-                    return stream.WriteAsync(data, 0, data.Length);
+                    await stream.WriteAsync(data, 0, data.Length);
+                    break;
             }
         }
 

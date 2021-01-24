@@ -31,8 +31,8 @@ namespace NetSockets.Server
         {
             return Task.Run(() =>
             {
-                Listener.Start();
                 Running = true;
+                Listener.Start();
                 Listener.BeginAcceptTcpClient(TcpClientConnect, Listener);
                 udpClient.BeginReceive(UdpReceiveCallback, udpClient);
             });
