@@ -13,7 +13,7 @@ public class ClientMonoEditor : Editor
 
         driver = (ClientMono)target;
 
-        GUILayout.Label($"Id: {driver.Socket?.Id}");
+        GUILayout.Label($"Id: {driver.Socket?.Id?.ToString()}");
         GUILayout.Label($"Is Connected: {driver.Socket?.Running}");
 
         message = EditorGUILayout.TextField("Test message:", message);

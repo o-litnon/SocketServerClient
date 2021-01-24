@@ -26,7 +26,7 @@ public class ClientMono : MonoBehaviour
 
 public class JustusClient : ClientSocket
 {
-    public string Id;
+    public int? Id;
 
     public JustusClient(string ip, int port, int bufferSize) : base(ip, port, bufferSize)
     {
@@ -37,8 +37,8 @@ public class JustusClient : ClientSocket
     {
         using (var packet = new Packet(e.Message))
         {
-            if (string.IsNullOrEmpty(Id))
-                Id = packet.ReadString();
+            if (!Id.HasValue)
+                Id = packet.ReadInt();
 
             var data = packet.ReadString();
 
@@ -51,14 +51,14 @@ public class JustusClient : ClientSocket
         if (Running)
             return Task.CompletedTask;
 
-        Id = string.Empty;
+        Id = null;
 
         return base.Open();
     }
 
     public override Task Close()
     {
-        Id = string.Empty;
+        Id = null;
 
         return base.Close();
     }
