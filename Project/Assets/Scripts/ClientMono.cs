@@ -1,55 +1,19 @@
 using UnityEngine;
 using NetSockets.Client;
-using System.Text;
-using System.Net;
 using NetSockets;
+using System.Threading.Tasks;
 
 public class ClientMono : MonoBehaviour
 {
     public string ip = "127.0.0.1";
     public int port = 7777;
     public int bufferSize = 4096;
-    public ClientSocket Socket;
+    public JustusClient Socket;
     public string Id;
 
     void Start()
     {
-        Socket = new ClientSocket(ip, port, bufferSize);
-        Socket.DataReceived += socket_DataReceived;
-    }
-
-    private void socket_DataReceived(object sender, DataReceivedArgs e)
-    {
-        var data = Encoding.UTF8.GetString(e.Message, 0, e.Message.Length);
-
-
-        if (data.Contains("ID:"))
-        {
-            Id = data.Replace("ID:", "");
-        }
-
-        Debug.Log($"Client received message: {data}");
-    }
-
-    public void SendTest(string message, ConnectionType type)
-    {
-        byte[] data = Encoding.UTF8.GetBytes(message);
-
-        Socket.Send(data, type);
-    }
-
-    public void Connect()
-    {
-        var connecting = Socket.Open();
-
-        //connecting.ContinueWith(t => {
-        //    Debug.Log($"{((IPEndPoint)Socket.udpClient.Client.LocalEndPoint).ToString()}");
-        //});
-    }
-
-    public void Disconnect()
-    {
-        Socket.Close();
+        Socket = new JustusClient(ip, port, bufferSize);
     }
 
     private void OnDestroy()
@@ -58,5 +22,42 @@ public class ClientMono : MonoBehaviour
         {
             Socket.Dispose();
         }
+    }
+}
+
+public class JustusClient : ClientSocket
+{
+    public string Id;
+
+    public JustusClient(string ip, int port, int bufferSize) : base(ip, port, bufferSize)
+    {
+        DataReceived += socket_DataReceived;
+    }
+
+    private void socket_DataReceived(object sender, DataReceivedArgs e)
+    {
+        using (var packet = new Packet(e.Message))
+        {
+            if (string.IsNullOrEmpty(Id))
+                Id = packet.ReadString();
+
+            var data = packet.ReadString();
+
+            Debug.Log($"Client received message: {data}");
+        }
+    }
+
+    public override Task Open()
+    {
+        Id = string.Empty;
+
+        return base.Open();
+    }
+
+    public override Task Close()
+    {
+        Id = string.Empty;
+
+        return base.Close();
     }
 }

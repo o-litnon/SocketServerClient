@@ -24,7 +24,7 @@ namespace NetSockets.Client
             buffer = new byte[bufferSize];
         }
 
-        public Task Open()
+        public virtual Task Open()
         {
             if (Running)
                 return Task.CompletedTask;
@@ -92,6 +92,7 @@ namespace NetSockets.Client
             udpClient.Connect(endpoint);
             udpClient.BeginReceive(UdpReceiveCallback, udpClient);
         }
+
         private void TcpListen()
         {
             Task.Run(() =>
