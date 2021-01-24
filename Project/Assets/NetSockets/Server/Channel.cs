@@ -10,7 +10,7 @@ namespace NetSockets.Server
     {
         public readonly string Id;
         public IPEndPoint RemoteEndpoint { get; private set; }
-        private ServerSocket thisServer;
+        private readonly ServerSocket thisServer;
         private readonly byte[] buffer;
         private TcpClient thisClient;
         private NetworkStream stream;

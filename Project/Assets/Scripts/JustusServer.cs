@@ -22,16 +22,19 @@ public class JustusServer : ServerSocket
         foreach (var item in ConnectedChannels.ActiveChannels)
             item.Value.Send(bytes, type);
     }
-    public void SendTo(Packet data, ConnectionType type, string id)
+    public void SendTo(Packet data, ConnectionType type, int id)
     {
-        if (ConnectedChannels.ActiveChannels.TryGetValue(id, out Channel channel))
+        var guid = ChannelId(id);
+
+        if (ConnectedChannels.ActiveChannels.TryGetValue(guid, out Channel channel))
             channel.Send(data.ToArray(), type);
     }
-    public void SendAllExcept(Packet packet, ConnectionType type, string id)
+    public void SendAllExcept(Packet packet, ConnectionType type, int id)
     {
         var bytes = packet.ToArray();
+        var guid = ChannelId(id);
 
-        foreach (var item in ConnectedChannels.ActiveChannels.Where(d => !d.Key.Equals(id)))
+        foreach (var item in ConnectedChannels.ActiveChannels.Where(d => !d.Key.Equals(guid)))
             item.Value.Send(bytes, type);
     }
 
@@ -76,6 +79,11 @@ public class JustusServer : ServerSocket
 
             Debugging.Log($"Server received message from {IdMap[e.Id]}: {data}");
         }
+    }
+
+    private string ChannelId(int id)
+    {
+        return IdMap.First(d => d.Value.Equals(id)).Key;
     }
 
     private int NewId()
