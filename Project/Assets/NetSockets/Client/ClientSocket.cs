@@ -24,7 +24,7 @@ namespace NetSockets.Client
             buffer = new byte[bufferSize];
         }
 
-        public Task Open()
+        public virtual Task Open()
         {
             if (Running)
                 return Task.CompletedTask;
@@ -46,7 +46,7 @@ namespace NetSockets.Client
             return tcpConnecting;
         }
 
-        public Task Close()
+        public virtual Task Close()
         {
             if (!Running)
                 return Task.CompletedTask;
@@ -72,19 +72,6 @@ namespace NetSockets.Client
                     return stream.WriteAsync(data, 0, data.Length);
             }
         }
-
-        private async void UdpReceiveCallback(IAsyncResult ar)
-        {
-            byte[] data = udpClient.EndReceive(ar, ref endpoint);
-            udpClient.BeginReceive(UdpReceiveCallback, udpClient);
-
-            var result = new DataReceivedArgs
-            {
-                Message = data
-            };
-
-            await OnDataIn(result);
-        }
         private void UdpListen()
         {
             udpClient = new UdpClient((IPEndPoint)tcpClient.Client.LocalEndPoint);
@@ -92,6 +79,7 @@ namespace NetSockets.Client
             udpClient.Connect(endpoint);
             udpClient.BeginReceive(UdpReceiveCallback, udpClient);
         }
+
         private void TcpListen()
         {
             Task.Run(() =>
@@ -114,6 +102,19 @@ namespace NetSockets.Client
                     }
                 }
             });
+        }
+
+        private async void UdpReceiveCallback(IAsyncResult ar)
+        {
+            byte[] data = udpClient.EndReceive(ar, ref endpoint);
+            udpClient.BeginReceive(UdpReceiveCallback, udpClient);
+
+            var result = new DataReceivedArgs
+            {
+                Message = data
+            };
+
+            await OnDataIn(result);
         }
 
         private Task OnDataIn(DataReceivedArgs e)

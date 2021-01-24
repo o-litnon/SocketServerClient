@@ -1,3 +1,4 @@
+using NetSockets;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
@@ -14,21 +15,33 @@ public class ClientMonoEditor : Editor
 
         driver = (ClientMono)target;
 
+        GUILayout.Label($"Id: {driver.Socket?.Id}");
         GUILayout.Label($"Is Connected: {driver.Socket?.Running}");
+
         message = EditorGUILayout.TextField("Test message:", message);
 
         if (!string.IsNullOrEmpty(message))
         {
-            if(GUILayout.Button("Send TCP"))
-                driver.SendTest(message + "using TCP", NetSockets.ConnectionType.TCP);
-            if (GUILayout.Button("Send UDP"))
-                driver.SendTest(message + "using UDP", NetSockets.ConnectionType.TCP);
+            using (var packet = new Packet())
+            {
+                if (GUILayout.Button("Send TCP"))
+                {
+                    packet.Write(message + " using TCP");
+                    driver.Socket.Send(packet.ToArray(), ConnectionType.TCP);
+                }
+
+                if (GUILayout.Button("Send UDP"))
+                {
+                    packet.Write(message + " using UDP");
+                    driver.Socket.Send(packet.ToArray(), ConnectionType.UDP);
+                }
+            }
         }
 
         if (GUILayout.Button("Connect"))
-            driver.Connect();
+            driver.Socket.Open();
         if (GUILayout.Button("Disconnect"))
-            driver.Disconnect();
+            driver.Socket.Close();
 
         base.OnInspectorGUI();
     }

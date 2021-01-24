@@ -22,10 +22,19 @@ public class ServerMonoEditor : Editor
 
         if (!string.IsNullOrEmpty(message))
         {
-            if (GUILayout.Button("Send TCP"))
-                driver.SendTest(message + "using TCP", ConnectionType.TCP);
-            if (GUILayout.Button("Send UDP"))
-                driver.SendTest(message + "using UDP", ConnectionType.UDP);
+            using (var packet = new Packet())
+            {
+                if (GUILayout.Button("Send TCP"))
+                {
+                    packet.Write(message + "using TCP");
+                    driver.Server.SendAll(packet, ConnectionType.TCP);
+                }
+                if (GUILayout.Button("Send UDP"))
+                {
+                    packet.Write(message + "using UDP");
+                    driver.Server.SendAll(packet, ConnectionType.UDP);
+                }
+            }
         }
 
         base.OnInspectorGUI();
