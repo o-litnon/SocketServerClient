@@ -23,19 +23,19 @@ namespace NetSockets.Server
             Id = Guid.NewGuid().ToString();
         }
 
-        public Task Open(TcpClient client)
+        public async Task Open(TcpClient client)
         {
-            if (!thisServer.ConnectedChannels.OpenChannels.TryAdd(Id, this))
-                return Task.CompletedTask;
+            if (!thisServer.ConnectedChannels.TryAdd(Id, this))
+                return;
 
             if (Running)
-                return Task.CompletedTask;
+                return;
 
             thisClient = client;
             RemoteEndpoint = (IPEndPoint)thisClient.Client.RemoteEndPoint;
             stream = thisClient.GetStream();
 
-            Task.Run(async () =>
+            _ = Task.Run(async () =>
             {
                 int position;
 
@@ -54,11 +54,13 @@ namespace NetSockets.Server
                 await Close();
             });
 
-            return thisServer.OnClientConnected(new ClientDataArgs
+            await thisServer.OnClientConnected(new ClientDataArgs
             {
                 Id = Id,
                 Channel = this
             });
+
+            await thisServer.ConnectedChannels.ActivatePending();
         }
 
         public Task Send(byte[] data, ConnectionType type = ConnectionType.TCP)
@@ -76,18 +78,20 @@ namespace NetSockets.Server
             }
         }
 
-        public Task Close()
+        public async Task Close()
         {
             stream.Close();
             thisClient.Close();
             thisClient.Dispose();
-            thisServer.ConnectedChannels.OpenChannels.TryRemove(Id, out Channel removedChannel);
+            thisServer.ConnectedChannels.TryRemove(Id, out Channel removedChannel);
 
-            return thisServer.OnClientDisconnected(new ClientDataArgs
+            await thisServer.OnClientDisconnected(new ClientDataArgs
             {
                 Id = Id,
                 Channel = this
             });
+
+            await thisServer.ConnectedChannels.ActivatePending();
         }
 
         public void Dispose()

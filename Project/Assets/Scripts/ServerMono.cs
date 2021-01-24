@@ -2,7 +2,6 @@ using NetSockets;
 using NetSockets.Server;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UnityEngine;
 
 public class ServerMono : MonoBehaviour
@@ -10,6 +9,7 @@ public class ServerMono : MonoBehaviour
     public string ip = "127.0.0.1";
     public int port = 7777;
     public int bufferSize = 4096;
+    public int maxPlayers;
     public JustusServer Server;
 
     void Start()
@@ -17,7 +17,7 @@ public class ServerMono : MonoBehaviour
         if (Server != null)
             return;
 
-        Server = new JustusServer(ip, port, bufferSize);
+        Server = new JustusServer(ip, port, bufferSize, maxPlayers);
         Server.Open();
 
         Debug.Log("Server started...");
@@ -35,10 +35,11 @@ public class ServerMono : MonoBehaviour
 public class JustusServer : ServerSocket
 {
     private Dictionary<string, int> idMap = new Dictionary<string, int>();
-    public JustusServer(string ip, int port, int bufferSize) : base(ip, port, bufferSize)
+    public JustusServer(string ip, int port, int bufferSize, int maxPlayers) : base(ip, port, bufferSize, maxPlayers)
     {
         DataReceived += server_OnDataIn;
         ClientConnected += server_OnClientIn;
+        ClientActivated += server_OnClientActivated;
         ClientDisconnected += server_OnClientOut;
     }
 
@@ -75,6 +76,11 @@ public class JustusServer : ServerSocket
 
             e.Channel.Send(packet.ToArray());
         }
+    }
+
+    private void server_OnClientActivated(object sender, ClientDataArgs e)
+    {
+        Debug.Log($"Client entered the game with Id: {idMap[e.Id]}");
     }
 
     private void server_OnClientOut(object sender, ClientDataArgs e)

@@ -15,24 +15,28 @@ public class ServerMonoEditor : Editor
 
         driver = (ServerMono)target;
 
-        var count = driver.Server != null ? driver.Server.ConnectedChannels.OpenChannels.Count : 0;
-        GUILayout.Label($"Has {count} connected clients");
-
-        message = EditorGUILayout.TextField("Test message:", message);
-
-        if (!string.IsNullOrEmpty(message))
+        if (driver.Server != null)
         {
-            using (var packet = new Packet())
+            GUILayout.Label($"Has {driver.Server.ConnectedChannels.OpenChannels.Count} connected clients");
+            GUILayout.Label($"Has {driver.Server.ConnectedChannels.ActiveChannels.Count}/{driver.Server.ConnectedChannels.MaxPlayers} active clients");
+            GUILayout.Label($"Has {driver.Server.ConnectedChannels.PendingChannels.Count} pending clients");
+
+            message = EditorGUILayout.TextField("Test message:", message);
+
+            if (!string.IsNullOrEmpty(message))
             {
-                if (GUILayout.Button("Send TCP"))
+                using (var packet = new Packet())
                 {
-                    packet.Write(message + "using TCP");
-                    driver.Server.SendAll(packet, ConnectionType.TCP);
-                }
-                if (GUILayout.Button("Send UDP"))
-                {
-                    packet.Write(message + "using UDP");
-                    driver.Server.SendAll(packet, ConnectionType.UDP);
+                    if (GUILayout.Button("Send TCP"))
+                    {
+                        packet.Write(message + "using TCP");
+                        driver.Server.SendAll(packet, ConnectionType.TCP);
+                    }
+                    if (GUILayout.Button("Send UDP"))
+                    {
+                        packet.Write(message + "using UDP");
+                        driver.Server.SendAll(packet, ConnectionType.UDP);
+                    }
                 }
             }
         }

@@ -11,17 +11,18 @@ namespace NetSockets.Server
         public bool Running { get; private set; }
         public event EventHandler<DataReceivedArgs> DataReceived;
         public event EventHandler<ClientDataArgs> ClientConnected;
+        public event EventHandler<ClientDataArgs> ClientActivated;
         public event EventHandler<ClientDataArgs> ClientDisconnected;
         public readonly Channels ConnectedChannels;
         public readonly int bufferSize;
         private readonly TcpListener Listener;
         internal readonly UdpClient udpClient;
 
-        public ServerSocket(string ip, int port, int bufferSize = 4096)
+        public ServerSocket(string ip, int port, int bufferSize = 4096, int maxPlayers = 0)
         {
             var endpoint = new IPEndPoint(IPAddress.Parse(ip), port);
             this.bufferSize = bufferSize;
-            ConnectedChannels = new Channels(this);
+            ConnectedChannels = new Channels(this, maxPlayers);
             Listener = new TcpListener(endpoint);
             udpClient = new UdpClient(endpoint);
         }
@@ -89,6 +90,11 @@ namespace NetSockets.Server
         internal virtual Task OnClientConnected(ClientDataArgs e)
         {
             return Task.Run(() => { ClientConnected?.Invoke(this, e); });
+        }
+
+        internal virtual Task OnClientActivated(ClientDataArgs e)
+        {
+            return Task.Run(() => { ClientActivated?.Invoke(this, e); });
         }
 
         internal virtual Task OnClientDisconnected(ClientDataArgs e)
