@@ -87,25 +87,25 @@ namespace NetSockets.Server
             }
         }
 
-        internal virtual Task OnDataIn(DataReceivedArgs e)
+        internal Task OnDataIn(DataReceivedArgs e)
         {
             lock (DataReceived)
                 return Task.Run(() => { DataReceived?.Invoke(this, e); });
         }
 
-        internal virtual Task OnClientConnected(ClientDataArgs e)
+        internal Task OnClientConnected(ClientDataArgs e)
         {
             lock (ClientConnected)
                 return Task.Run(() => { ClientConnected?.Invoke(this, e); });
         }
 
-        internal virtual Task OnClientActivated(ClientDataArgs e)
+        internal Task OnClientActivated(ClientDataArgs e)
         {
             lock (ClientActivated)
                 return Task.Run(() => { ClientActivated?.Invoke(this, e); });
         }
 
-        internal virtual Task OnClientDisconnected(ClientDataArgs e)
+        internal Task OnClientDisconnected(ClientDataArgs e)
         {
             lock (ClientDisconnected)
                 return Task.Run(() => { ClientDisconnected?.Invoke(this, e); });
