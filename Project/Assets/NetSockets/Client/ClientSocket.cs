@@ -85,7 +85,9 @@ namespace NetSockets.Client
         private async void UdpReceiveCallback(IAsyncResult ar)
         {
             byte[] data = udpClient.EndReceive(ar, ref endpoint);
-            udpClient.BeginReceive(UdpReceiveCallback, udpClient);
+
+            if (Running)
+                udpClient.BeginReceive(UdpReceiveCallback, udpClient);
 
             var result = new DataReceivedArgs
             {
@@ -97,7 +99,8 @@ namespace NetSockets.Client
 
         private Task OnDataIn(DataReceivedArgs e)
         {
-            return Task.Run(() => DataReceived?.Invoke(this, e));
+            lock (DataReceived)
+                return Task.Run(() => DataReceived?.Invoke(this, e));
         }
 
         public virtual Task Close()

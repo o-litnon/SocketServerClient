@@ -1,4 +1,3 @@
-using UnityEngine;
 using NetSockets.Client;
 using NetSockets;
 using System.Threading.Tasks;
@@ -17,7 +16,10 @@ public class JustusClient : ClientSocket
         using (var packet = new Packet(e.Message))
         {
             if (!Id.HasValue)
+            {
+                Debugging.Log("Receiving Client Id");
                 Id = packet.ReadInt();
+            }
 
             var data = packet.ReadString();
 

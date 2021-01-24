@@ -70,20 +70,18 @@ namespace NetSockets.Server
             });
         }
 
-        public async Task Send(byte[] data, ConnectionType type = ConnectionType.TCP)
+        public Task Send(byte[] data, ConnectionType type = ConnectionType.TCP)
         {
             if (!Running)
-                return;
+                return Task.CompletedTask;
 
             switch (type)
             {
                 case ConnectionType.UDP:
-                    await thisServer.udpClient.SendAsync(data, data.Length, RemoteEndpoint);
-                    break;
+                    return thisServer.udpClient.SendAsync(data, data.Length, RemoteEndpoint);
                 case ConnectionType.TCP:
                 default:
-                    await stream.WriteAsync(data, 0, data.Length);
-                    break;
+                    return stream.WriteAsync(data, 0, data.Length);
             }
         }
 

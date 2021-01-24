@@ -3,7 +3,6 @@ using NetSockets.Server;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 public class JustusServer : ServerSocket
 {
@@ -20,20 +19,20 @@ public class JustusServer : ServerSocket
     {
         var bytes = packet.ToArray();
 
-        foreach (var item in ConnectedChannels.OpenChannels)
-            _ = item.Value.Send(bytes, type);
+        foreach (var item in ConnectedChannels.ActiveChannels)
+            item.Value.Send(bytes, type);
     }
     public void SendTo(Packet data, ConnectionType type, string id)
     {
-        if (ConnectedChannels.OpenChannels.TryGetValue(id, out Channel channel))
-            _ = channel.Send(data.ToArray(), type);
+        if (ConnectedChannels.ActiveChannels.TryGetValue(id, out Channel channel))
+            channel.Send(data.ToArray(), type);
     }
     public void SendAllExcept(Packet packet, ConnectionType type, string id)
     {
         var bytes = packet.ToArray();
 
-        foreach (var item in ConnectedChannels.OpenChannels.Where(d => !d.Key.Equals(id)))
-            _ = item.Value.Send(bytes, type);
+        foreach (var item in ConnectedChannels.ActiveChannels.Where(d => !d.Key.Equals(id)))
+            item.Value.Send(bytes, type);
     }
 
     private void server_OnClientIn(object sender, ClientDataArgs e)
@@ -46,13 +45,20 @@ public class JustusServer : ServerSocket
         {
             packet.Write("Welcome to the server");
 
-            _ = e.Channel.Send(packet.ToArray(), ConnectionType.TCP);
+            e.Channel.Send(packet.ToArray(), ConnectionType.TCP);
         }
     }
 
     private void server_OnClientActivated(object sender, ClientDataArgs e)
     {
         Debugging.Log($"Client entered the game with Id: {IdMap[e.Id]}");
+
+        using (var packet = new Packet())
+        {
+            packet.Write("You are now in-game");
+
+            e.Channel.Send(packet.ToArray(), ConnectionType.TCP);
+        }
     }
 
     private void server_OnClientOut(object sender, ClientDataArgs e)

@@ -29,12 +29,12 @@ public class ServerMonoEditor : Editor
                 {
                     if (GUILayout.Button("Send TCP"))
                     {
-                        packet.Write(message + "using TCP");
+                        packet.Write(message + " [using TCP]");
                         driver.Server.SendAll(packet, ConnectionType.TCP);
                     }
                     if (GUILayout.Button("Send UDP"))
                     {
-                        packet.Write(message + "using UDP");
+                        packet.Write(message + " [using UDP]");
                         driver.Server.SendAll(packet, ConnectionType.UDP);
                     }
                 }
