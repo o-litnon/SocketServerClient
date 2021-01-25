@@ -3,6 +3,7 @@ using NetSockets.Server;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 public class JustusServer : ServerSocket
 {
@@ -20,14 +21,14 @@ public class JustusServer : ServerSocket
         var bytes = packet.ToArray();
 
         foreach (var item in ConnectedChannels.ActiveChannels)
-            item.Value.Send(bytes, type);
+            _ =  item.Value.Send(bytes, type);
     }
     public void SendTo(Packet data, ConnectionType type, int id)
     {
         var guid = ChannelId(id);
 
         if (ConnectedChannels.ActiveChannels.TryGetValue(guid, out Channel channel))
-            channel.Send(data.ToArray(), type);
+            _ = channel.Send(data.ToArray(), type);
     }
     public void SendAllExcept(Packet packet, ConnectionType type, int id)
     {
@@ -35,38 +36,38 @@ public class JustusServer : ServerSocket
         var guid = ChannelId(id);
 
         foreach (var item in ConnectedChannels.ActiveChannels.Where(d => !d.Key.Equals(guid)))
-            item.Value.Send(bytes, type);
+            _ = item.Value.Send(bytes, type);
     }
 
     private void server_OnClientIn(object sender, ClientDataArgs e)
     {
         IdMap[e.Id] = NewId();
 
-        Debugging.Log($"Client connected with Id: {IdMap[e.Id]}");
+        Debugging.Log($"Server: {IdMap[e.Id]} connected");
 
         using (var packet = new Packet(IdMap[e.Id]))
         {
             packet.Write("Welcome to the server");
 
-            e.Channel.Send(packet.ToArray(), ConnectionType.TCP);
+            _ = e.Channel.Send(packet.ToArray(), ConnectionType.TCP);
         }
     }
 
     private void server_OnClientActivated(object sender, ClientDataArgs e)
     {
-        Debugging.Log($"Client entered the game with Id: {IdMap[e.Id]}");
+        Debugging.Log($"Server: {IdMap[e.Id]} entered the game");
 
         using (var packet = new Packet())
         {
             packet.Write("You are now in-game");
 
-            e.Channel.Send(packet.ToArray(), ConnectionType.TCP);
+            _ = e.Channel.Send(packet.ToArray(), ConnectionType.TCP);
         }
     }
 
     private void server_OnClientOut(object sender, ClientDataArgs e)
     {
-        Debugging.Log($"Client disconnected with Id: {IdMap[e.Id]}");
+        Debugging.Log($"Server: {IdMap[e.Id]} disconnected");
 
         IdMap.Remove(e.Id);
     }
@@ -77,7 +78,7 @@ public class JustusServer : ServerSocket
         {
             var data = packet.ReadString();
 
-            Debugging.Log($"Server received message from {IdMap[e.Id]}: {data}");
+            Debugging.Log($"Server: From client {IdMap[e.Id]}: {data}");
         }
     }
 

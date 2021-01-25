@@ -17,13 +17,13 @@ public class JustusClient : ClientSocket
         {
             if (!Id.HasValue)
             {
-                Debugging.Log("Receiving Client Id");
+                Debugging.Log("Client: Receiving Id");
                 Id = packet.ReadInt();
             }
 
             var data = packet.ReadString();
 
-            Debugging.Log($"Client received message: {data}");
+            Debugging.Log($"Client {Id}: {data}");
         }
     }
 
@@ -37,13 +37,13 @@ public class JustusClient : ClientSocket
         await base.Open();
 
         if (!Running)
-            Debugging.LogWarning("Unable to connect to the server.");
+            Debugging.LogWarning("Client: Unable to connect to the server.");
     }
 
     public override Task Close()//without 'async', you must return a Task
     {
         if (Id.HasValue)
-            Debugging.Log($"Disconnected from the server. Releasing Id: {Id}");
+            Debugging.Log($"Client {Id}: Disconnected");
 
         Id = null;
 

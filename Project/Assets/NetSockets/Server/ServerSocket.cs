@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -29,34 +30,35 @@ namespace NetSockets.Server
         public virtual Task Open()
         {
             if (!Running)
-            {
-                Running = true;
-                Listener.Start();
-                Listener.BeginAcceptTcpClient(TcpClientConnect, Listener);
-
-                udpClient = new UdpClient((IPEndPoint)Listener.LocalEndpoint);
-                udpClient.BeginReceive(UdpReceiveCallback, udpClient);
-            }
-
+                StartListeners();
+            
             return Task.CompletedTask;
         }
-
-        private async void UdpReceiveCallback(IAsyncResult ar)
+        private void StartListeners()
         {
-            IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Any, 0);
+            Running = true;
+            Listener.Start();
+            Listener.BeginAcceptTcpClient(TcpClientConnect, Listener);
 
-            byte[] data = udpClient.EndReceive(ar, ref clientEndPoint);
-
-            if (Running)
-                udpClient.BeginReceive(UdpReceiveCallback, udpClient);
-
-            var channel = ConnectedChannels.OpenChannels.FirstOrDefault(d => d.Value.RemoteEndpoint.Equals(clientEndPoint));
-
-            await OnDataIn(new DataReceivedArgs
+            Task.Run(async () =>
             {
-                Id = channel.Key,
-                Channel = channel.Value,
-                Data = data
+                using (udpClient = new UdpClient((IPEndPoint)Listener.LocalEndpoint))
+                {
+                    UdpReceiveResult data;
+                    KeyValuePair<string, Channel> channel;
+                    while (Running)
+                    {
+                        data = await udpClient.ReceiveAsync();
+                        channel = ConnectedChannels.OpenChannels.FirstOrDefault(d => d.Value.RemoteEndpoint.Equals(data.RemoteEndPoint));
+
+                        await OnDataIn(new DataReceivedArgs
+                        {
+                            Id = channel.Key,
+                            Channel = channel.Value,
+                            Data = data.Buffer
+                        });
+                    }
+                }
             });
         }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -50,20 +51,26 @@ namespace NetSockets.Server
             return result;
         }
 
+        private object ActivatingLock = new object();
         public Task ActivatePending()
         {
             return Task.Run(async () =>
             {
-                while (!IsFull && PendingChannels.Count > 0)
-                    if (PendingChannels.TryDequeue(out Channel channel) && channel.Running)
-                        if (ActiveChannels.TryAdd(channel.Id, channel))
-                            await thisServer.OnClientActivated(new ClientDataArgs
-                            {
-                                Id = channel.Id,
-                                Channel = channel
-                            });
-                        else
-                            PendingChannels.Enqueue(channel);
+                var jobs = new List<Task>();
+
+                lock (ActivatingLock)
+                    while (!IsFull && PendingChannels.Count > 0)
+                        if (PendingChannels.TryDequeue(out Channel channel) && channel.Running)
+                            if (ActiveChannels.TryAdd(channel.Id, channel))
+                                jobs.Add(thisServer.OnClientActivated(new ClientDataArgs
+                                {
+                                    Id = channel.Id,
+                                    Channel = channel
+                                }));
+                            else
+                                PendingChannels.Enqueue(channel);
+
+                await Task.WhenAll(jobs);
             });
         }
     }

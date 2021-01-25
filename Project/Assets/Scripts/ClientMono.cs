@@ -5,7 +5,7 @@ public class ClientMono : MonoBehaviour
     public string ip = "127.0.0.1";
     public int port = 7777;
     public int bufferSize = 4096;
-    public bool connectOnStart = false;
+    public bool autoConnect = false;
     public JustusClient Socket;
 
     void Awake()
@@ -13,10 +13,13 @@ public class ClientMono : MonoBehaviour
         Socket = new JustusClient(ip, port, bufferSize);
     }
 
-    async void OnEnable()
+    async void Update()
     {
-        if (connectOnStart)
+        if (autoConnect)
+        {
+            autoConnect = false;
             await Socket.Open();
+        }
     }
 
     async void OnDisable()
