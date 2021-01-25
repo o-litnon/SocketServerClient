@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace NetSockets.Server
 {
-    public class Channel : ISender, IDisposable
+    public class Channel : ISender
     {
         public readonly string Id;
         public IPEndPoint RemoteEndpoint { get; private set; }
@@ -21,6 +21,11 @@ namespace NetSockets.Server
             thisServer = myServer;
             buffer = new byte[bufferSize];
             Id = Guid.NewGuid().ToString();
+        }
+
+        ~Channel()
+        {
+            thisClient?.Dispose();
         }
 
         public async Task Open(TcpClient client)
@@ -100,11 +105,6 @@ namespace NetSockets.Server
             });
 
             await thisServer.ConnectedChannels.ActivatePending();
-        }
-
-        public void Dispose()
-        {
-            thisClient.Dispose();
         }
     }
 }

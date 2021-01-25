@@ -23,6 +23,12 @@ namespace NetSockets.Client
             buffer = new byte[bufferSize];
         }
 
+        ~ClientSocket()
+        {
+            tcpClient?.Dispose();
+            udpClient?.Dispose();
+        }
+
         public virtual async Task Open()
         {
             if (Running)
@@ -47,7 +53,7 @@ namespace NetSockets.Client
             switch (type)
             {
                 case ConnectionType.UDP:
-                    await udpClient.SendAsync(data, data.Length, endpoint);
+                    await udpClient.SendAsync(data, data.Length);
                     break;
                 case ConnectionType.TCP:
                 default:
@@ -78,21 +84,22 @@ namespace NetSockets.Client
                 }
             });
 
+            udpClient = new UdpClient((IPEndPoint)tcpClient.Client.LocalEndPoint);
             Task.Run(async () =>
             {
-                using (udpClient = new UdpClient((IPEndPoint)tcpClient.Client.LocalEndPoint))
+                udpClient.Connect(endpoint);
+                UdpReceiveResult data;
+                while (Running)
                 {
-                    UdpReceiveResult data;
-                    while (Running)
-                    {
-                        data = await udpClient.ReceiveAsync();
+                    data = await udpClient.ReceiveAsync();
 
-                        await OnDataIn(new DataReceivedArgs()
-                        {
-                            Data = data.Buffer
-                        });
-                    }
+                    await OnDataIn(new DataReceivedArgs()
+                    {
+                        Data = data.Buffer
+                    });
                 }
+
+                udpClient.Close();
             });
         }
 
@@ -105,10 +112,7 @@ namespace NetSockets.Client
         public virtual Task Close()
         {
             if (Running)
-            {
                 tcpClient.Close();
-                udpClient.Close();
-            }
 
             return Task.CompletedTask;
         }

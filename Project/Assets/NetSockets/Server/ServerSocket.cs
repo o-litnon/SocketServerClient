@@ -58,6 +58,8 @@ namespace NetSockets.Server
                             Data = data.Buffer
                         });
                     }
+
+                    udpClient.Close();
                 }
             });
         }
@@ -85,7 +87,6 @@ namespace NetSockets.Server
                         await current.Close();
 
                 Listener.Stop();
-                udpClient.Close();
             }
         }
 
