@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -84,9 +85,13 @@ namespace NetSockets.Server
             {
                 Running = false;
 
+                var jobs = new List<Task>();
+
                 foreach (var item in ConnectedChannels.OpenChannels.Keys)
                     if (ConnectedChannels.OpenChannels.TryGetValue(item, out Channel current))
-                        await current.Close();
+                        jobs.Add(current.Close());
+
+                await Task.WhenAll(jobs);
 
                 Listener.Stop();
                 udpClient.Close();
