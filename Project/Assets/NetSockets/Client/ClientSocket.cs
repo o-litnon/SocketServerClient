@@ -25,6 +25,7 @@ namespace NetSockets.Client
 
         ~ClientSocket()
         {
+            stream?.Dispose();
             tcpClient?.Dispose();
             udpClient?.Dispose();
         }
@@ -64,42 +65,44 @@ namespace NetSockets.Client
 
         private void StartListeners()
         {
-            Task.Run(async () =>
-            {
-                using (stream = tcpClient.GetStream())
-                {
-                    int position;
-
-                    while (Running && (position = await stream.ReadAsync(buffer, 0, buffer.Length)) != 0)
-                    {
-                        var args = new DataReceivedArgs()
-                        {
-                            Data = buffer.Take(position).ToArray()
-                        };
-
-                        await OnDataIn(args);
-                    }
-
-                    await Close();
-                }
-            });
+            stream = tcpClient.GetStream();
+            stream.BeginRead(buffer, 0, buffer.Length, TcpReceive, tcpClient);
 
             udpClient = new UdpClient((IPEndPoint)tcpClient.Client.LocalEndPoint);
-            Task.Run(async () =>
+            udpClient.Connect(endpoint);
+            udpClient.BeginReceive(UdpReceive, udpClient);
+        }
+
+        private async void TcpReceive(IAsyncResult ar)
+        {
+            int position = stream.EndRead(ar);
+
+            if (position == 0)
             {
-                udpClient.Connect(endpoint);
-                UdpReceiveResult data;
-                while (Running)
-                {
-                    data = await udpClient.ReceiveAsync();
+                await Close();
+                return;
+            }
 
-                    await OnDataIn(new DataReceivedArgs()
-                    {
-                        Data = data.Buffer
-                    });
-                }
+            if (Running)
+                stream.BeginRead(buffer, 0, buffer.Length, TcpReceive, tcpClient);
 
-                udpClient.Close();
+            await OnDataIn(new DataReceivedArgs()
+            {
+                Data = buffer.Take(position).ToArray()
+            });
+        }
+
+        private async void UdpReceive(IAsyncResult ar)
+        {
+            var remoteEndpoint = default(IPEndPoint);
+            byte[] data = udpClient.EndReceive(ar, ref remoteEndpoint);
+
+            if (Running)
+                udpClient.BeginReceive(UdpReceive, udpClient);
+
+            await OnDataIn(new DataReceivedArgs()
+            {
+                Data = data
             });
         }
 
@@ -112,7 +115,10 @@ namespace NetSockets.Client
         public virtual Task Close()
         {
             if (Running)
+            {
+                udpClient.Close();
                 tcpClient.Close();
+            }
 
             return Task.CompletedTask;
         }

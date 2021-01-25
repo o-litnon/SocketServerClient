@@ -54,24 +54,23 @@ namespace NetSockets.Server
         private object ActivatingLock = new object();
         public Task ActivatePending()
         {
-            return Task.Run(async () =>
+            lock (ActivatingLock)
             {
                 var jobs = new List<Task>();
 
-                lock (ActivatingLock)
-                    while (!IsFull && PendingChannels.Count > 0)
-                        if (PendingChannels.TryDequeue(out Channel channel) && channel.Running)
-                            if (ActiveChannels.TryAdd(channel.Id, channel))
-                                jobs.Add(thisServer.OnClientActivated(new ClientDataArgs
-                                {
-                                    Id = channel.Id,
-                                    Channel = channel
-                                }));
-                            else
-                                PendingChannels.Enqueue(channel);
+                while (!IsFull && PendingChannels.Count > 0)
+                    if (PendingChannels.TryDequeue(out Channel channel) && channel.Running)
+                        if (ActiveChannels.TryAdd(channel.Id, channel))
+                            jobs.Add(thisServer.OnClientActivated(new ClientDataArgs
+                            {
+                                Id = channel.Id,
+                                Channel = channel
+                            }));
+                        else
+                            PendingChannels.Enqueue(channel);
 
-                await Task.WhenAll(jobs);
-            });
+                return Task.WhenAll(jobs);
+            }
         }
     }
 }

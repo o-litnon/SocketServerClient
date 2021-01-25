@@ -44,7 +44,7 @@ public class JustusClient : ClientSocket
         }
     }
 
-    public override Task Close()//without 'async', you must return a Task
+    public override Task Close()
     {
         if (Id.HasValue)
             Debugging.Log($"Client {Id}: Disconnected");

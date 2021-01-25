@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -27,11 +26,16 @@ namespace NetSockets.Server
             Listener = new TcpListener(endpoint);
         }
 
+        ~ServerSocket()
+        {
+            udpClient?.Dispose();
+        }
+
         public virtual Task Open()
         {
             if (!Running)
                 StartListeners();
-            
+
             return Task.CompletedTask;
         }
         private void StartListeners()
@@ -40,28 +44,8 @@ namespace NetSockets.Server
             Listener.Start();
             Listener.BeginAcceptTcpClient(TcpClientConnect, Listener);
 
-            Task.Run(async () =>
-            {
-                using (udpClient = new UdpClient((IPEndPoint)Listener.LocalEndpoint))
-                {
-                    UdpReceiveResult data;
-                    KeyValuePair<string, Channel> channel;
-                    while (Running)
-                    {
-                        data = await udpClient.ReceiveAsync();
-                        channel = ConnectedChannels.OpenChannels.FirstOrDefault(d => d.Value.RemoteEndpoint.Equals(data.RemoteEndPoint));
-
-                        await OnDataIn(new DataReceivedArgs
-                        {
-                            Id = channel.Key,
-                            Channel = channel.Value,
-                            Data = data.Buffer
-                        });
-                    }
-
-                    udpClient.Close();
-                }
-            });
+            udpClient = new UdpClient((IPEndPoint)Listener.LocalEndpoint);
+            udpClient.BeginReceive(UdpReceive, udpClient);
         }
 
         private async void TcpClientConnect(IAsyncResult ar)
@@ -76,6 +60,24 @@ namespace NetSockets.Server
             await channel.Open(client);
         }
 
+        private async void UdpReceive(IAsyncResult ar)
+        {
+            var remoteEndpoint = default(IPEndPoint);
+            byte[] data = udpClient.EndReceive(ar, ref remoteEndpoint);
+
+            if (Running)
+                udpClient.BeginReceive(UdpReceive, udpClient);
+
+            var channel = ConnectedChannels.OpenChannels.FirstOrDefault(d => d.Value.RemoteEndpoint.Equals(remoteEndpoint));
+
+            await OnDataIn(new DataReceivedArgs
+            {
+                Id = channel.Key,
+                Channel = channel.Value,
+                Data = data
+            });
+        }
+
         public virtual async Task Close()
         {
             if (Running)
@@ -87,6 +89,7 @@ namespace NetSockets.Server
                         await current.Close();
 
                 Listener.Stop();
+                udpClient.Close();
             }
         }
 

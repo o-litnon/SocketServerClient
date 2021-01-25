@@ -25,6 +25,7 @@ namespace NetSockets.Server
 
         ~Channel()
         {
+            stream?.Dispose();
             thisClient?.Dispose();
         }
 
@@ -52,26 +53,28 @@ namespace NetSockets.Server
 
         private void StartListeners()
         {
-            Task.Run(async () =>
+            stream = thisClient.GetStream();
+            stream.BeginRead(buffer, 0, buffer.Length, TcpReceive, thisClient);
+        }
+
+        private async void TcpReceive(IAsyncResult ar)
+        {
+            int position = stream.EndRead(ar);
+
+            if (position == 0)
             {
-                using (stream = thisClient.GetStream())
-                {
-                    int position;
+                await Close();
+                return;
+            }
 
-                    while (Running && (position = await stream.ReadAsync(buffer, 0, buffer.Length)) != 0)
-                    {
-                        var args = new DataReceivedArgs()
-                        {
-                            Data = buffer.Take(position).ToArray(),
-                            Id = Id,
-                            Channel = this
-                        };
+            if (Running)
+                stream.BeginRead(buffer, 0, buffer.Length, TcpReceive, thisClient);
 
-                        await thisServer.OnDataIn(args);
-                    }
-
-                    await Close();
-                }
+            await thisServer.OnDataIn(new DataReceivedArgs()
+            {
+                Data = buffer.Take(position).ToArray(),
+                Id = Id,
+                Channel = this
             });
         }
 
