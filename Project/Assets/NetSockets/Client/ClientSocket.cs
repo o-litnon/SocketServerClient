@@ -108,8 +108,7 @@ namespace NetSockets.Client
 
         private Task OnDataIn(DataReceivedArgs e)
         {
-            lock (DataReceived)
-                return Task.Run(() => DataReceived?.Invoke(this, e));
+            return Task.Run(() => { lock (DataReceived) DataReceived?.Invoke(this, e); });
         }
 
         public virtual Task Close()

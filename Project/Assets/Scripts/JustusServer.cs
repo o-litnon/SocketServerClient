@@ -41,7 +41,7 @@ public class JustusServer : ServerSocket
 
     private void server_OnClientIn(object sender, ClientDataArgs e)
     {
-        IdMap[e.Id] = NewId();
+        int id = NewId(e.Id);
 
         Debugging.Log($"Server: {IdMap[e.Id]} connected");
 
@@ -90,12 +90,14 @@ public class JustusServer : ServerSocket
         return IdMap.First(d => d.Value.Equals(id)).Key;
     }
 
-    private int NewId()
+    private int NewId(string input)
     {
-        lock (IdMap)
-            for (int i = 0; i < int.MaxValue; i++)
-                if (!IdMap.ContainsValue(i))
-                    return i;
+        for (int i = 0; i < int.MaxValue; i++)
+            if (!IdMap.ContainsValue(i))
+            {
+                IdMap[input] = i;
+                return i;
+            }
 
         throw new Exception("To many players are being hosted");
     }

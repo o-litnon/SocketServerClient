@@ -25,33 +25,38 @@ namespace NetSockets.Server
             thisServer = myServer;
         }
 
+        private object ActivatingLock = new object();
         internal bool TryAdd(string id, Channel value)
         {
-            var result = OpenChannels.TryAdd(id, value);
+            lock (ActivatingLock)
+            {
+                var result = OpenChannels.TryAdd(id, value);
 
-            if (result)
-                PendingChannels.Enqueue(value);
+                if (result)
+                    PendingChannels.Enqueue(value);
 
-            return result;
+                return result;
+            }
         }
 
         internal bool TryRemove(string id, out Channel value)
         {
-            var result = OpenChannels.TryRemove(id, out value);
-
-            if (result)
+            lock (ActivatingLock)
             {
-                ActiveChannels.TryRemove(id, out Channel channel);
+                var result = OpenChannels.TryRemove(id, out value);
 
-                if (PendingChannels.Contains(value))
-                    lock (PendingChannels)
+                if (result)
+                {
+                    ActiveChannels.TryRemove(id, out Channel channel);
+
+                    if (PendingChannels.Contains(value))
                         PendingChannels = new ConcurrentQueue<Channel>(PendingChannels.Where(d => !d.Id.Equals(id)));
-            }
+                }
 
-            return result;
+                return result;
+            }
         }
 
-        private object ActivatingLock = new object();
         public Task ActivatePending()
         {
             lock (ActivatingLock)

@@ -95,26 +95,22 @@ namespace NetSockets.Server
 
         internal Task OnDataIn(DataReceivedArgs e)
         {
-            lock (DataReceived)
-                return Task.Run(() => { DataReceived?.Invoke(this, e); });
+            return Task.Run(() => { lock (DataReceived) DataReceived?.Invoke(this, e); });
         }
 
         internal Task OnClientConnected(ClientDataArgs e)
         {
-            lock (ClientConnected)
-                return Task.Run(() => { ClientConnected?.Invoke(this, e); });
+            return Task.Run(() => { lock (ClientConnected) ClientConnected?.Invoke(this, e); });
         }
 
         internal Task OnClientActivated(ClientDataArgs e)
         {
-            lock (ClientActivated)
-                return Task.Run(() => { ClientActivated?.Invoke(this, e); });
+            return Task.Run(() => { lock (ClientActivated) ClientActivated?.Invoke(this, e); });
         }
 
         internal Task OnClientDisconnected(ClientDataArgs e)
         {
-            lock (ClientDisconnected)
-                return Task.Run(() => { ClientDisconnected?.Invoke(this, e); });
+            return Task.Run(() => { lock (ClientDisconnected) ClientDisconnected?.Invoke(this, e); });
         }
     }
 }
