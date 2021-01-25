@@ -16,27 +16,33 @@ public class JustusServer : ServerSocket
         ClientDisconnected += server_OnClientOut;
     }
 
-    public void SendAll(Packet packet, ConnectionType type)
+    public Task SendAll(Packet packet, ConnectionType type)
     {
         var bytes = packet.ToArray();
+        var jobs = new List<Task>();
 
         foreach (var item in ConnectedChannels.ActiveChannels)
-            _ = item.Value.Send(bytes, type);
+            jobs.Add(item.Value.Send(bytes, type));
+
+        return Task.WhenAll(jobs);
     }
-    public void SendTo(Packet data, ConnectionType type, int id)
+    public async Task SendTo(Packet data, ConnectionType type, int id)
     {
         var guid = ChannelId(id);
 
         if (ConnectedChannels.ActiveChannels.TryGetValue(guid, out Channel channel))
-            _ = channel.Send(data.ToArray(), type);
+            await channel.Send(data.ToArray(), type);
     }
-    public void SendAllExcept(Packet packet, ConnectionType type, int id)
+    public Task SendAllExcept(Packet packet, ConnectionType type, int id)
     {
         var bytes = packet.ToArray();
         var guid = ChannelId(id);
+        var jobs = new List<Task>();
 
         foreach (var item in ConnectedChannels.ActiveChannels.Where(d => !d.Key.Equals(guid)))
-            _ = item.Value.Send(bytes, type);
+            jobs.Add(item.Value.Send(bytes, type));
+
+        return Task.WhenAll(jobs);
     }
 
     private void server_OnClientIn(object sender, ClientDataArgs e)
