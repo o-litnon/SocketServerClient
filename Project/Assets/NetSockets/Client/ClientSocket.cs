@@ -46,6 +46,16 @@ namespace NetSockets.Client
             StartListeners();
         }
 
+        private void StartListeners()
+        {
+            stream = tcpClient.GetStream();
+            stream.BeginRead(buffer, 0, buffer.Length, TcpReceive, tcpClient);
+
+            udpClient = new UdpClient((IPEndPoint)tcpClient.Client.LocalEndPoint);
+            udpClient.Connect(endpoint);
+            udpClient.BeginReceive(UdpReceive, udpClient);
+        }
+
         public virtual async Task Send(byte[] data, ConnectionType type = ConnectionType.TCP)
         {
             if (!Running)
@@ -61,16 +71,6 @@ namespace NetSockets.Client
                     await stream.WriteAsync(data, 0, data.Length);
                     break;
             }
-        }
-
-        private void StartListeners()
-        {
-            stream = tcpClient.GetStream();
-            stream.BeginRead(buffer, 0, buffer.Length, TcpReceive, tcpClient);
-
-            udpClient = new UdpClient((IPEndPoint)tcpClient.Client.LocalEndPoint);
-            udpClient.Connect(endpoint);
-            udpClient.BeginReceive(UdpReceive, udpClient);
         }
 
         private async void TcpReceive(IAsyncResult ar)
@@ -106,11 +106,6 @@ namespace NetSockets.Client
             });
         }
 
-        private Task OnDataIn(DataReceivedArgs e)
-        {
-            return Task.Run(() => { lock (DataReceived) DataReceived?.Invoke(this, e); });
-        }
-
         public virtual Task Close()
         {
             if (Running)
@@ -120,6 +115,11 @@ namespace NetSockets.Client
             }
 
             return Task.CompletedTask;
+        }
+
+        private Task OnDataIn(DataReceivedArgs e)
+        {
+            return Task.Run(() => { lock (DataReceived) DataReceived?.Invoke(this, e); });
         }
     }
 }

@@ -13,12 +13,12 @@ public class ClientMono : MonoBehaviour
         Socket = new JustusClient(ip, port, bufferSize);
     }
 
-    async void Update()
+    void Update()
     {
         if (autoConnect)
         {
             autoConnect = false;
-            await Socket.Open();
+            _ = Socket.Open();
         }
     }
 
