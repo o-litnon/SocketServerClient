@@ -21,7 +21,7 @@ public class JustusServer : ServerSocket
         var bytes = packet.ToArray();
 
         foreach (var item in ConnectedChannels.ActiveChannels)
-            _ =  item.Value.Send(bytes, type);
+            _ = item.Value.Send(bytes, type);
     }
     public void SendTo(Packet data, ConnectionType type, int id)
     {
@@ -74,6 +74,9 @@ public class JustusServer : ServerSocket
 
     private void server_OnDataIn(object sender, DataReceivedArgs e)
     {
+        if (e.Data.Length == 0)
+            return;
+
         using (var packet = new Packet(e.Data))
         {
             var data = packet.ReadString();

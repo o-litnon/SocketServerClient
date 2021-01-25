@@ -38,6 +38,10 @@ public class JustusClient : ClientSocket
 
         if (!Running)
             Debugging.LogWarning("Client: Unable to connect to the server.");
+        else
+        {
+            await Send(new byte[0], ConnectionType.UDP);
+        }
     }
 
     public override Task Close()//without 'async', you must return a Task
