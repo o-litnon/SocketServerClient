@@ -73,6 +73,7 @@ namespace NetSockets.Server
 
             await OnDataIn(new DataReceivedArgs
             {
+                Type = ConnectionType.UDP,
                 Id = channel.Key,
                 Channel = channel.Value,
                 Data = data

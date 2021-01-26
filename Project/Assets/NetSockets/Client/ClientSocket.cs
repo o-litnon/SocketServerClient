@@ -88,6 +88,7 @@ namespace NetSockets.Client
 
             await OnDataIn(new DataReceivedArgs()
             {
+                Type = ConnectionType.TCP,
                 Data = buffer.Take(position).ToArray()
             });
         }
@@ -102,6 +103,7 @@ namespace NetSockets.Client
 
             await OnDataIn(new DataReceivedArgs()
             {
+                Type = ConnectionType.UDP,
                 Data = data
             });
         }

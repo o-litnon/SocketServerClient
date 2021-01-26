@@ -72,6 +72,7 @@ namespace NetSockets.Server
 
             await thisServer.OnDataIn(new DataReceivedArgs()
             {
+                Type = ConnectionType.TCP,
                 Data = buffer.Take(position).ToArray(),
                 Id = Id,
                 Channel = this
