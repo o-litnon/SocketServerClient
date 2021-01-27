@@ -83,14 +83,14 @@ namespace NetSockets.Client
                 return;
             }
 
-            if (Running)
-                stream.BeginRead(buffer, 0, buffer.Length, TcpReceive, tcpClient);
-
             await OnDataIn(new DataReceivedArgs()
             {
                 Type = ConnectionType.TCP,
                 Data = buffer.Take(position).ToArray()
             });
+
+            if (Running)
+                stream.BeginRead(buffer, 0, buffer.Length, TcpReceive, tcpClient);
         }
 
         private async void UdpReceive(IAsyncResult ar)

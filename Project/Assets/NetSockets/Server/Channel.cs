@@ -67,9 +67,6 @@ namespace NetSockets.Server
                 return;
             }
 
-            if (Running)
-                stream.BeginRead(buffer, 0, buffer.Length, TcpReceive, thisClient);
-
             await thisServer.OnDataIn(new DataReceivedArgs()
             {
                 Type = ConnectionType.TCP,
@@ -77,6 +74,9 @@ namespace NetSockets.Server
                 Id = Id,
                 Channel = this
             });
+
+            if (Running)
+                stream.BeginRead(buffer, 0, buffer.Length, TcpReceive, thisClient);
         }
 
         public async Task Send(byte[] data, ConnectionType type = ConnectionType.TCP)
