@@ -19,10 +19,11 @@ namespace NetSockets.Server
         private readonly TcpListener Listener;
         internal UdpClient udpClient;
 
-        public ServerSocket(string ip, int port, int bufferSize = 4096, int maxPlayers = 0)
+        public ServerSocket(int port, int bufferSize = 4096, int maxPlayers = -1) : this(IPAddress.Any, port, bufferSize, maxPlayers) { }
+        public ServerSocket(string ip, int port, int bufferSize = 4096, int maxPlayers = -1) : this(IPAddress.Parse(ip), port, bufferSize, maxPlayers) { }
+        public ServerSocket(IPAddress ip, int port, int bufferSize = 4096, int maxPlayers = -1)
         {
-            var ipAddress = string.IsNullOrEmpty(ip) ? IPAddress.Any : IPAddress.Parse(ip);
-            var endpoint = new IPEndPoint(ipAddress, port);
+            var endpoint = new IPEndPoint(ip, port);
             this.bufferSize = bufferSize;
             ConnectedChannels = new Channels(this, maxPlayers);
             Listener = new TcpListener(endpoint);
