@@ -21,7 +21,8 @@ namespace NetSockets.Server
 
         public ServerSocket(string ip, int port, int bufferSize = 4096, int maxPlayers = 0)
         {
-            var endpoint = new IPEndPoint(IPAddress.Parse(ip), port);
+            var ipAddress = string.IsNullOrEmpty(ip) ? IPAddress.Any : IPAddress.Parse(ip);
+            var endpoint = new IPEndPoint(ipAddress, port);
             this.bufferSize = bufferSize;
             ConnectedChannels = new Channels(this, maxPlayers);
             Listener = new TcpListener(endpoint);
