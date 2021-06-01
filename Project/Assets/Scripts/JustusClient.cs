@@ -1,12 +1,13 @@
 using NetSockets.Client;
 using NetSockets;
 using System.Threading.Tasks;
+using System.Net;
 
 public class JustusClient : ClientSocket
 {
     public int? Id;
 
-    public JustusClient(string ip, int port, int bufferSize) : base(ip, port, bufferSize)
+    public JustusClient(string ip, int port, int bufferSize) : base(string.IsNullOrEmpty(ip) ? IPAddress.Loopback: IPAddress.Parse(ip), port, bufferSize)
     {
         DataReceived += socket_DataReceived;
     }

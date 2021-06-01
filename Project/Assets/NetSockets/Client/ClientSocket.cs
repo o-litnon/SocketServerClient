@@ -17,9 +17,10 @@ namespace NetSockets.Client
         public event EventHandler<DataReceivedArgs> DataReceived;
         public bool Running => tcpClient != null && tcpClient.Connected;
 
-        public ClientSocket(string ip, int port, int bufferSize)
+        public ClientSocket(int port = 25565, int bufferSize = 4096) : this(IPAddress.Loopback, port, bufferSize) { }
+        public ClientSocket(IPAddress ip, int port = 25565, int bufferSize = 4096)
         {
-            endpoint = new IPEndPoint(IPAddress.Parse(ip), port);
+            endpoint = new IPEndPoint(ip, port);
             buffer = new byte[bufferSize];
         }
 
