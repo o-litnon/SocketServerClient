@@ -97,7 +97,7 @@ namespace NetSockets.Server
         }
         public async Task Send(byte[] data, ConnectionType type, string id)
         {
-            if (ConnectedChannels.ActiveChannels.TryGetValue(id, out Channel channel))
+            if (ConnectedChannels.OpenChannels.TryGetValue(id, out Channel channel))
                 await channel.Send(data, type);
         }
         public Task SendExcept(byte[] data, ConnectionType type, string id)

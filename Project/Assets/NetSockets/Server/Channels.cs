@@ -30,7 +30,7 @@ namespace NetSockets.Server
 
         public Channels(ServerSocket myServer, int maxPlayers)
         {
-            this.MaxPlayers = maxPlayers;
+            this._maxPlayers = maxPlayers;
             OpenChannels = new ConcurrentDictionary<string, Channel>();
             ActiveChannels = new ConcurrentDictionary<string, Channel>();
             PendingChannels = new ConcurrentQueue<Channel>();

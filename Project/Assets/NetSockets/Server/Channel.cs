@@ -14,7 +14,7 @@ namespace NetSockets.Server
         private TcpSocket tcpSocket;
         public bool Running => tcpSocket != null && tcpSocket.Connected;
 
-        public Channel(ServerSocket myServer)
+        internal Channel(ServerSocket myServer)
         {
             thisServer = myServer;
             Id = Guid.NewGuid().ToString();
@@ -25,7 +25,7 @@ namespace NetSockets.Server
             tcpSocket?.Dispose();
         }
 
-        public async Task Open(TcpClient client)
+        internal async Task Open(TcpClient client)
         {
             if (!thisServer.ConnectedChannels.TryAdd(Id, this))
                 return;
