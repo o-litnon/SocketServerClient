@@ -6,13 +6,12 @@ using System.Threading.Tasks;
 
 namespace NetSockets.Sockets
 {
-    internal class TcpSocket
+    internal class TcpSocket : IHttpSocket
     {
         private readonly TcpClient tcpClient;
-        public bool Connected => tcpClient.Client != null && tcpClient.Client.Connected;
-
-        public IPEndPoint RemoteEndPoint => (IPEndPoint)tcpClient.Client.RemoteEndPoint;
         public IPEndPoint LocalEndPoint => (IPEndPoint)tcpClient.Client.LocalEndPoint;
+        public IPEndPoint RemoteEndPoint => (IPEndPoint)tcpClient.Client.RemoteEndPoint;
+        public bool Connected => tcpClient.Client != null && tcpClient.Client.Connected;
 
         private Func<SocketDataReceived, Task> dataReceived;
         private byte[] buffer;
@@ -33,19 +32,15 @@ namespace NetSockets.Sockets
             set => tcpClient.SendBufferSize = value;
         }
 
-        public TcpSocket(TcpClient client) : base()
+        public TcpSocket() : this(new TcpClient()) { }
+        public TcpSocket(TcpClient client)
         {
             this.tcpClient = client;
             buffer = new byte[tcpClient.ReceiveBufferSize];
         }
-        public TcpSocket() : base()
+        public Task ConnectAsync(IPEndPoint endPoint)
         {
-            tcpClient = new TcpClient();
-            buffer = new byte[tcpClient.ReceiveBufferSize];
-        }
-        public Task ConnectAsync(IPAddress address, int port)
-        {
-            return tcpClient.ConnectAsync(address, port);
+            return tcpClient.ConnectAsync(endPoint.Address, endPoint.Port);
         }
 
         public void Listen(Func<SocketDataReceived, Task> dataReceived)

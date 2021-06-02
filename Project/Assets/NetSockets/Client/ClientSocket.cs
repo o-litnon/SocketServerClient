@@ -1,4 +1,3 @@
-using System;
 using System.Net;
 using System.Threading.Tasks;
 using NetSockets.Sockets;
@@ -35,13 +34,13 @@ namespace NetSockets.Client
             tcpSocket = new TcpSocket();
             tcpSocket.ReceiveBufferSize = bufferSize;
 
-            await tcpSocket.ConnectAsync(endpoint.Address, endpoint.Port);
+            await tcpSocket.ConnectAsync(endpoint);
             tcpSocket.Listen(DataRecieved);
 
             udpSocket = new UdpSocket(tcpSocket.LocalEndPoint);
-            udpSocket.Client.ReceiveBufferSize = bufferSize;
+            udpSocket.ReceiveBufferSize = bufferSize;
 
-            udpSocket.Connect(endpoint);
+            await udpSocket.ConnectAsync(endpoint);
             udpSocket.Listen(DataRecieved);
         }
 

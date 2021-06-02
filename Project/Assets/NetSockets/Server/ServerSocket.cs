@@ -40,7 +40,7 @@ namespace NetSockets.Server
                 Listener.BeginAcceptTcpClient(TcpClientConnect, Listener);
 
                 udpSocket = new UdpSocket((IPEndPoint)Listener.LocalEndpoint);
-                udpSocket.Client.ReceiveBufferSize = bufferSize;
+                udpSocket.ReceiveBufferSize = bufferSize;
                 udpSocket.Listen(UdpDataRecieved);
             }
 
