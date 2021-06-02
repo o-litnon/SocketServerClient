@@ -1,3 +1,4 @@
+using NetSockets.Sockets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,13 +16,13 @@ namespace NetSockets.Server
         public event EventHandler<ClientDataArgs> ClientActivated;
         public event EventHandler<ClientDataArgs> ClientDisconnected;
         public readonly Channels ConnectedChannels;
-        public readonly int bufferSize;
+        internal UdpSocket udpSocket;
+        internal readonly int bufferSize;
         private readonly TcpListener Listener;
-        internal UdpClient udpClient;
 
-        public ServerSocket(int port, int bufferSize = 4096, int maxPlayers = -1) : this(IPAddress.Any, port, bufferSize, maxPlayers) { }
-        public ServerSocket(string ip, int port, int bufferSize = 4096, int maxPlayers = -1) : this(IPAddress.Parse(ip), port, bufferSize, maxPlayers) { }
-        public ServerSocket(IPAddress ip, int port, int bufferSize = 4096, int maxPlayers = -1)
+        public ServerSocket(int port, int bufferSize = 8192, int maxPlayers = -1) : this(IPAddress.Any, port, bufferSize, maxPlayers) { }
+        public ServerSocket(string ip, int port, int bufferSize = 8192, int maxPlayers = -1) : this(IPAddress.Parse(ip), port, bufferSize, maxPlayers) { }
+        public ServerSocket(IPAddress ip, int port, int bufferSize = 8192, int maxPlayers = -1)
         {
             var endpoint = new IPEndPoint(ip, port);
             this.bufferSize = bufferSize;
@@ -31,24 +32,23 @@ namespace NetSockets.Server
 
         ~ServerSocket()
         {
-            udpClient?.Dispose();
+            udpSocket?.Dispose();
         }
 
         public virtual Task Open()
         {
             if (!Running)
-                StartListeners();
+            {
+                Running = true;
+                Listener.Start();
+                Listener.BeginAcceptTcpClient(TcpClientConnect, Listener);
+
+                udpSocket = new UdpSocket((IPEndPoint)Listener.LocalEndpoint);
+                udpSocket.Client.ReceiveBufferSize = bufferSize;
+                udpSocket.Listen(UdpDataRecieved);
+            }
 
             return Task.CompletedTask;
-        }
-        private void StartListeners()
-        {
-            Running = true;
-            Listener.Start();
-            Listener.BeginAcceptTcpClient(TcpClientConnect, Listener);
-
-            udpClient = new UdpClient((IPEndPoint)Listener.LocalEndpoint);
-            udpClient.BeginReceive(UdpReceive, udpClient);
         }
 
         private async void TcpClientConnect(IAsyncResult ar)
@@ -58,27 +58,21 @@ namespace NetSockets.Server
             if (Running)
                 Listener.BeginAcceptTcpClient(TcpClientConnect, Listener);
 
-            var channel = new Channel(this, bufferSize);
+            var channel = new Channel(this);
 
             await channel.Open(client);
         }
 
-        private async void UdpReceive(IAsyncResult ar)
+        private async Task UdpDataRecieved(SocketDataReceived e)
         {
-            var remoteEndpoint = default(IPEndPoint);
-            byte[] data = udpClient.EndReceive(ar, ref remoteEndpoint);
-
-            if (Running)
-                udpClient.BeginReceive(UdpReceive, udpClient);
-
-            var channel = ConnectedChannels.OpenChannels.FirstOrDefault(d => d.Value.RemoteEndpoint.Equals(remoteEndpoint));
+            var channel = ConnectedChannels.OpenChannels.FirstOrDefault(d => d.Value.RemoteEndpoint.Equals(e.RemoteEndpoint));
 
             await OnDataIn(new DataReceivedArgs
             {
-                Type = ConnectionType.UDP,
+                Type = e.Type,
                 Id = channel.Key,
                 Channel = channel.Value,
-                Data = data
+                Data = e.Data
             });
         }
 
@@ -97,28 +91,81 @@ namespace NetSockets.Server
                 await Task.WhenAll(jobs);
 
                 Listener.Stop();
-                udpClient.Close();
+                udpSocket.Close();
             }
         }
 
-        internal Task OnDataIn(DataReceivedArgs e)
+
+        public Task SendAll(byte[] data, ConnectionType type)
         {
-            return Task.Run(() => { lock (DataReceived) DataReceived?.Invoke(this, e); });
+            var jobs = new List<Task>();
+
+            foreach (var item in ConnectedChannels.ActiveChannels)
+                jobs.Add(item.Value.Send(data, type));
+
+            return Task.WhenAll(jobs);
+        }
+        public async Task SendTo(byte[] data, ConnectionType type, string id)
+        {
+            if (ConnectedChannels.ActiveChannels.TryGetValue(id, out Channel channel))
+                await channel.Send(data, type);
+        }
+        public Task SendAllExcept(byte[] data, ConnectionType type, string id)
+        {
+            var jobs = new List<Task>();
+
+            foreach (var item in ConnectedChannels.ActiveChannels.Where(d => !d.Key.Equals(id)))
+                jobs.Add(item.Value.Send(data, type));
+
+            return Task.WhenAll(jobs);
         }
 
-        internal Task OnClientConnected(ClientDataArgs e)
+        public Task CloseAllConnections()
         {
-            return Task.Run(() => { lock (ClientConnected) ClientConnected?.Invoke(this, e); });
+            var jobs = new List<Task>();
+
+            foreach (var item in ConnectedChannels.OpenChannels)
+                jobs.Add(item.Value.Close());
+
+            return Task.WhenAll(jobs);
         }
 
-        internal Task OnClientActivated(ClientDataArgs e)
+        public async Task CloseConnection(string id)
         {
-            return Task.Run(() => { lock (ClientActivated) ClientActivated?.Invoke(this, e); });
+            if (ConnectedChannels.ActiveChannels.TryGetValue(id, out Channel channel))
+                await channel.Close();
         }
 
-        internal Task OnClientDisconnected(ClientDataArgs e)
+        public virtual Task OnDataIn(DataReceivedArgs e)
         {
-            return Task.Run(() => { lock (ClientDisconnected) ClientDisconnected?.Invoke(this, e); });
+            if (DataReceived != null)
+                return Task.Run(() => { lock (DataReceived) DataReceived.Invoke(this, e); });
+            else
+                return Task.CompletedTask;
+        }
+
+        public virtual Task OnClientConnected(ClientDataArgs e)
+        {
+            if (ClientConnected != null)
+                return Task.Run(() => { lock (ClientConnected) ClientConnected.Invoke(this, e); });
+            else
+                return Task.CompletedTask;
+        }
+
+        public virtual Task OnClientActivated(ClientDataArgs e)
+        {
+            if (ClientActivated != null)
+                return Task.Run(() => { lock (ClientActivated) ClientActivated.Invoke(this, e); });
+            else
+                return Task.CompletedTask;
+        }
+
+        public virtual Task OnClientDisconnected(ClientDataArgs e)
+        {
+            if (ClientDisconnected != null)
+                return Task.Run(() => { lock (ClientDisconnected) ClientDisconnected.Invoke(this, e); });
+            else
+                return Task.CompletedTask;
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using NetSockets.Client;
-using System;
+﻿using System;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -7,37 +6,60 @@ using System.Threading.Tasks;
 
 namespace NetSockets.Sockets
 {
-    internal class TcpSocket : TcpClient
+    internal class TcpSocket
     {
-        public IPEndPoint RemoteEndpoint => (IPEndPoint)this.Client.RemoteEndPoint;
+        private readonly TcpClient tcpClient;
+        public bool Connected => tcpClient.Client != null && tcpClient.Client.Connected;
 
-        public event EventHandler<DataReceivedArgs> DataReceived;
-        public event EventHandler OnClose;
+        public IPEndPoint RemoteEndPoint => (IPEndPoint)tcpClient.Client.RemoteEndPoint;
+        public IPEndPoint LocalEndPoint => (IPEndPoint)tcpClient.Client.LocalEndPoint;
+
+        private Func<SocketDataReceived, Task> dataReceived;
         private byte[] buffer;
         private NetworkStream stream;
         private Packet receivedData;
-
-        public TcpSocket(int bufferSize)
+        public int ReceiveBufferSize
         {
-            SendBufferSize = bufferSize;
-            ReceiveBufferSize = bufferSize;
-
-            buffer = new byte[ReceiveBufferSize];
-            receivedData = new Packet();
+            get => tcpClient.ReceiveBufferSize;
+            set
+            {
+                tcpClient.ReceiveBufferSize = value;
+                buffer = new byte[value];
+            }
+        }
+        public int SendBufferSize
+        {
+            get => tcpClient.SendBufferSize;
+            set => tcpClient.SendBufferSize = value;
         }
 
-        public void Start()
+        public TcpSocket(TcpClient client) : base()
         {
-            stream = GetStream();
+            this.tcpClient = client;
+            buffer = new byte[tcpClient.ReceiveBufferSize];
+        }
+        public TcpSocket() : base()
+        {
+            tcpClient = new TcpClient();
+            buffer = new byte[tcpClient.ReceiveBufferSize];
+        }
+        public Task ConnectAsync(IPAddress address, int port)
+        {
+            return tcpClient.ConnectAsync(address, port);
+        }
+
+        public void Listen(Func<SocketDataReceived, Task> dataReceived)
+        {
+            receivedData?.Dispose();
+            receivedData = new Packet();
+
+            this.dataReceived = dataReceived;
+
+            stream = tcpClient.GetStream();
             stream.BeginRead(buffer, 0, buffer.Length, TcpReceive, this);
         }
 
-        public void Stop()
-        {
-            TryCloseStream();
-        }
-
-        public async Task Send(byte[] data)
+        public async Task SendAsync(byte[] data)
         {
             if (this.Connected)
             {
@@ -49,24 +71,19 @@ namespace NetSockets.Sockets
             }
         }
 
-        private void TcpReceive(IAsyncResult ar)
+        private async void TcpReceive(IAsyncResult ar)
         {
             int position = stream.EndRead(ar);
 
-            if (position == 0)
-            {
-                Close();
-                return;
-            }
-
             var data = buffer.Take(position).ToArray();
-            receivedData.Reset(HandleData(data));
+
+            await HandleData(data);
 
             if (Connected)
                 stream.BeginRead(buffer, 0, buffer.Length, TcpReceive, this);
         }
 
-        private bool HandleData(byte[] data)
+        private async Task HandleData(byte[] data)
         {
             receivedData.SetBytes(data);
 
@@ -76,50 +93,36 @@ namespace NetSockets.Sockets
                 length > 0 && length <= receivedData.UnreadLength();
                 length = packetLength(receivedData))
             {
-                _ = OnDataIn(new DataReceivedArgs
+                await dataReceived?.Invoke(new SocketDataReceived
                 {
+                    RemoteEndpoint = RemoteEndPoint,
                     Type = ConnectionType.TCP,
                     Data = receivedData.ReadBytes(length)
                 });
             }
 
-            return length <= 0;
+            receivedData.Reset(length <= 0);
         }
 
         private int packetLength(Packet packet)
         {
-            if (receivedData.UnreadLength() >= 4)
-                return receivedData.ReadInt();
+            if (packet.UnreadLength() >= 4)
+                return packet.ReadInt();
             else
                 return 0;
         }
 
-        private Task OnDataIn(DataReceivedArgs e)
+        public void Close()
         {
-            return Task.Run(() => { lock (DataReceived) DataReceived?.Invoke(this, e); });
+            tcpClient.Close();
+            stream?.Close();
         }
 
-        private Task onClose()
+        public void Dispose()
         {
-            return Task.Run(() => { lock (OnClose) OnClose?.Invoke(this, null); });
-        }
-
-        public new void Close()
-        {
-            base.Close();
-            TryCloseStream();
-            _ = onClose();
-        }
-
-        private void TryCloseStream()
-        {
-            if (stream != null)
-                stream.Close();
-        }
-
-        ~TcpSocket()
-        {
-            Close();
+            tcpClient.Dispose();
+            stream?.Dispose();
+            receivedData?.Dispose();
         }
     }
 }

@@ -1,6 +1,4 @@
-﻿using NetSockets.Client;
-using System;
-using System.Linq;
+﻿using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -9,40 +7,40 @@ namespace NetSockets.Sockets
 {
     internal class UdpSocket : UdpClient
     {
+        private Func<SocketDataReceived, Task> dataReceived;
+        public IPEndPoint LocalEndPoint => (IPEndPoint)Client.LocalEndPoint;
+        public IPEndPoint RemoteEndPoint => (IPEndPoint)Client.RemoteEndPoint;
 
-        public event EventHandler<DataReceivedArgs> DataReceived;
-        public bool Connected => base.Client.Connected;
+        public UdpSocket(IPEndPoint iPEndPoint) : base(iPEndPoint) { }
 
-        public UdpSocket(IPEndPoint iPEndPoint) : base(iPEndPoint)
+        public async Task SendAsync(byte[] data, IPEndPoint endPoint = null)
         {
-            Connect(iPEndPoint);
-            BeginReceive(UdpReceive, this);
+            var packet = new Packet(data);
+            packet.WriteLength();
+            var bytes = packet.ToArray();
+
+            if (endPoint == null)
+                await base.SendAsync(bytes, bytes.Length);
+            else
+                await base.SendAsync(bytes, bytes.Length, endPoint);
+        }
+        public void Listen(Func<SocketDataReceived, Task> dataReceived)
+        {
+            this.dataReceived = dataReceived;
+
+            base.BeginReceive(UdpReceive, this);
         }
 
-        public async Task Send(byte[] data)
-        {
-            if (this.Connected)
-            {
-                var packet = new Packet(data);
-                packet.WriteLength();
-                var bytes = packet.ToArray();
-
-                await SendAsync(bytes, bytes.Length);
-            }
-        }
-
-        private void UdpReceive(IAsyncResult ar)
+        private async void UdpReceive(IAsyncResult ar)
         {
             var remoteEndpoint = default(IPEndPoint);
-            byte[] data = EndReceive(ar, ref remoteEndpoint);
+            byte[] data = base.EndReceive(ar, ref remoteEndpoint);
 
-            if (Connected)
-                BeginReceive(UdpReceive, this);
+            await HandleData(data, remoteEndpoint);
 
-            HandleData(data);
+            base.BeginReceive(UdpReceive, this);
         }
-
-        private void HandleData(byte[] data)
+        private async Task HandleData(byte[] data, IPEndPoint remoteEndpoint)
         {
             using (Packet _packet = new Packet(data))
             {
@@ -50,8 +48,9 @@ namespace NetSockets.Sockets
 
                 if (length > 0 && length <= _packet.UnreadLength())
                 {
-                    _ = OnDataIn(new DataReceivedArgs
+                    await dataReceived.Invoke(new SocketDataReceived
                     {
+                        RemoteEndpoint = remoteEndpoint,
                         Type = ConnectionType.UDP,
                         Data = _packet.ReadBytes(length)
                     });
@@ -64,11 +63,6 @@ namespace NetSockets.Sockets
                 return packet.ReadInt();
             else
                 return 0;
-        }
-
-        private Task OnDataIn(DataReceivedArgs e)
-        {
-            return Task.Run(() => { lock (DataReceived) DataReceived?.Invoke(this, e); });
         }
     }
 }

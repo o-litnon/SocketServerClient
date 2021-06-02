@@ -71,6 +71,7 @@
     <Compile Include="Assets\NetSockets\ThreadManager.cs" />
     <Compile Include="Assets\NetSockets\Sockets\UdpSocket.cs" />
     <Compile Include="Assets\NetSockets\Sockets\TcpSocket.cs" />
+    <Compile Include="Assets\NetSockets\Sockets\SocketDataReceived.cs" />
   </ItemGroup>
   <ItemGroup>
      <None Include="Assets\NetSockets\NetSockets.asmdef" />

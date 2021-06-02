@@ -5,7 +5,7 @@ public class ServerMono : MonoBehaviour
 {
     public string ip = "127.0.0.1";
     public int port = 7777;
-    public int bufferSize = 4096;
+    public int bufferSize = 24;
     public int maxPlayers;
     public JustusServer Server;
 
