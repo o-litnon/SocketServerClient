@@ -12,7 +12,19 @@ namespace NetSockets.Server
         public ConcurrentDictionary<string, Channel> ActiveChannels { get; private set; }
         public ConcurrentQueue<Channel> PendingChannels { get; private set; }
         public bool IsFull => MaxPlayers >= 0 && ActiveChannels.Count >= MaxPlayers;
-        public int MaxPlayers { get; set; }
+        private int _maxPlayers;
+        public int MaxPlayers
+        {
+            get => _maxPlayers;
+            set
+            {
+                bool hasChanged = value != _maxPlayers;
+                _maxPlayers = value;
+
+                if (hasChanged && !IsFull)
+                    _ = ActivatePending();
+            }
+        }
 
         private readonly ServerSocket thisServer;
 

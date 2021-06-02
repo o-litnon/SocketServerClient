@@ -25,10 +25,8 @@ public class ServerMono : MonoBehaviour
     private void Update()
     {
         if (Server.ConnectedChannels.MaxPlayers != maxPlayers)
-        {
             Server.ConnectedChannels.MaxPlayers = maxPlayers;
-            Server.ConnectedChannels.ActivatePending();
-        }
+
     }
 
     async void OnDisable()
