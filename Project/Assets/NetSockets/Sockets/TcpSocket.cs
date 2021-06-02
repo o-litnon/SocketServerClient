@@ -75,12 +75,22 @@ namespace NetSockets.Sockets
         {
             int position = stream.EndRead(ar);
 
-            var data = buffer.Take(position).ToArray();
+            if (position == 0)
+                await dataReceived?.Invoke(new SocketDataReceived
+                {
+                    RemoteEndpoint = RemoteEndPoint,
+                    Type = ConnectionType.TCP,
+                    Data = new byte[0]
+                });
+            else
+            {
+                var data = buffer.Take(position).ToArray();
 
-            await HandleData(data);
+                await HandleData(data);
 
-            if (Connected)
-                stream.BeginRead(buffer, 0, buffer.Length, TcpReceive, this);
+                if (Connected)
+                    stream.BeginRead(buffer, 0, buffer.Length, TcpReceive, this);
+            }
         }
 
         private async Task HandleData(byte[] data)
@@ -114,15 +124,15 @@ namespace NetSockets.Sockets
 
         public void Close()
         {
-            tcpClient.Close();
             stream?.Close();
+            tcpClient.Close();
         }
 
         public void Dispose()
         {
-            tcpClient.Dispose();
             stream?.Dispose();
             receivedData?.Dispose();
+            tcpClient.Dispose();
         }
     }
 }
