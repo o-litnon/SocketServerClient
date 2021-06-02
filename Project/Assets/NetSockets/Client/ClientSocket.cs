@@ -5,14 +5,13 @@ using NetSockets.Sockets;
 
 namespace NetSockets.Client
 {
-    public class ClientSocket : ISocket, ISender
+    public abstract class ClientSocket : ISocket, ISender
     {
         private int bufferSize;
         private IPEndPoint endpoint;
         private TcpSocket tcpSocket;
         private UdpSocket udpSocket;
 
-        public event EventHandler<DataReceivedArgs> DataReceived;
         public bool Running => tcpSocket != null && tcpSocket.Connected;
 
         public ClientSocket(int port = 25565, int bufferSize = 8192) : this(IPAddress.Loopback, port, bufferSize) { }
@@ -86,10 +85,6 @@ namespace NetSockets.Client
             return Task.CompletedTask;
         }
 
-        public virtual async Task OnDataIn(DataReceivedArgs e)
-        {
-            if (DataReceived != null)
-                await Task.Run(() => { lock (DataReceived) DataReceived.Invoke(this, e); });
-        }
+        public abstract Task OnDataIn(DataReceivedArgs e);
     }
 }

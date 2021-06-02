@@ -8,13 +8,9 @@ using System.Threading.Tasks;
 
 namespace NetSockets.Server
 {
-    public class ServerSocket : ISocket, ISender
+    public abstract class ServerSocket : ISocket, ISender
     {
         public bool Running { get; private set; }
-        public event EventHandler<DataReceivedArgs> DataReceived;
-        public event EventHandler<ClientDataArgs> ClientConnected;
-        public event EventHandler<ClientDataArgs> ClientActivated;
-        public event EventHandler<ClientDataArgs> ClientDisconnected;
         public readonly Channels ConnectedChannels;
         internal UdpSocket udpSocket;
         internal readonly int bufferSize;
@@ -81,7 +77,7 @@ namespace NetSockets.Server
             if (Running)
             {
                 Running = false;
-                
+
                 await CloseAllConnections();
 
                 Listener.Stop();
@@ -130,30 +126,9 @@ namespace NetSockets.Server
                 await channel.Close();
         }
 
-        public virtual async Task OnDataIn(DataReceivedArgs e)
-        {
-            if (DataReceived != null)
-                await Task.Run(() => { lock (DataReceived) DataReceived.Invoke(this, e); });
-        }
-
-        public virtual async Task OnClientConnected(ClientDataArgs e)
-        {
-            if (ClientConnected != null)
-                await Task.Run(() => { lock (ClientConnected) ClientConnected.Invoke(this, e); });
-        }
-
-        public virtual async Task OnClientActivated(ClientDataArgs e)
-        {
-            if (ClientActivated != null)
-                await Task.Run(() => { lock (ClientActivated) ClientActivated.Invoke(this, e); });
-        }
-
-        public virtual Task OnClientDisconnected(ClientDataArgs e)
-        {
-            if (ClientDisconnected != null)
-                return Task.Run(() => { lock (ClientDisconnected) ClientDisconnected.Invoke(this, e); });
-            else
-                return Task.CompletedTask;
-        }
+        public abstract Task OnDataIn(DataReceivedArgs e);
+        public abstract Task OnClientConnected(ClientDataArgs e);
+        public abstract Task OnClientActivated(ClientDataArgs e);
+        public abstract Task OnClientDisconnected(ClientDataArgs e);
     }
 }

@@ -29,8 +29,6 @@ public class JustusServer : ServerSocket
 
     public override async Task OnClientConnected(ClientDataArgs e)
     {
-        await base.OnClientActivated(e);
-
         int id = NewId(e.Id);
 
         Debugging.Log($"Server: {IdMap[e.Id]} connected");
@@ -45,8 +43,6 @@ public class JustusServer : ServerSocket
 
     public override async Task OnClientActivated(ClientDataArgs e)
     {
-        await base.OnClientActivated(e);
-
         Debugging.Log($"Server: {IdMap[e.Id]} entered the game");
 
         using (var packet = new Packet())
@@ -57,28 +53,26 @@ public class JustusServer : ServerSocket
         }
     }
 
-    public override async Task OnClientDisconnected(ClientDataArgs e)
+    public override Task OnClientDisconnected(ClientDataArgs e)
     {
-        await base.OnClientDisconnected(e);
-
         Debugging.Log($"Server: {IdMap[e.Id]} disconnected");
 
         IdMap.Remove(e.Id);
+
+        return Task.CompletedTask;
     }
 
-    public override async Task OnDataIn(DataReceivedArgs e)
+    public override Task OnDataIn(DataReceivedArgs e)
     {
-        await base.OnDataIn(e);
+        if (e.Data.Length > 0)
+            using (var packet = new Packet(e.Data))
+            {
+                var data = packet.ReadString();
 
-        if (e.Data.Length == 0)
-            return;
+                Debugging.Log($"Server: From client {IdMap[e.Id]}: {data}");
+            }
 
-        using (var packet = new Packet(e.Data))
-        {
-            var data = packet.ReadString();
-
-            Debugging.Log($"Server: From client {IdMap[e.Id]}: {data}");
-        }
+        return Task.CompletedTask;
     }
 
     private string ChannelId(int id)
