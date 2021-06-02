@@ -8,44 +8,26 @@ using System.Threading.Tasks;
 public class JustusServer : ServerSocket
 {
     private Dictionary<string, int> IdMap = new Dictionary<string, int>();
-    public JustusServer(string ip, int port, int bufferSize, int maxPlayers) : base(ip, port, bufferSize, maxPlayers)
-    {
-        DataReceived += server_OnDataIn;
-        ClientConnected += server_OnClientIn;
-        ClientActivated += server_OnClientActivated;
-        ClientDisconnected += server_OnClientOut;
-    }
+    public JustusServer(string ip, int port, int bufferSize, int maxPlayers) : base(ip, port, bufferSize, maxPlayers) { }
 
     public Task SendAll(Packet packet, ConnectionType type)
     {
-        var bytes = packet.ToArray();
-        var jobs = new List<Task>();
-
-        foreach (var item in ConnectedChannels.ActiveChannels)
-            jobs.Add(item.Value.Send(bytes, type));
-
-        return Task.WhenAll(jobs);
+        return Send(packet.ToArray(), type);
     }
-    public async Task SendTo(Packet data, ConnectionType type, int id)
+    public Task SendTo(Packet packet, ConnectionType type, int id)
     {
         var guid = ChannelId(id);
 
-        if (ConnectedChannels.ActiveChannels.TryGetValue(guid, out Channel channel))
-            await channel.Send(data.ToArray(), type);
+        return Send(packet.ToArray(), type, guid);
     }
     public Task SendAllExcept(Packet packet, ConnectionType type, int id)
     {
-        var bytes = packet.ToArray();
         var guid = ChannelId(id);
-        var jobs = new List<Task>();
 
-        foreach (var item in ConnectedChannels.ActiveChannels.Where(d => !d.Key.Equals(guid)))
-            jobs.Add(item.Value.Send(bytes, type));
-
-        return Task.WhenAll(jobs);
+        return SendExcept(packet.ToArray(), type, guid);
     }
 
-    private void server_OnClientIn(object sender, ClientDataArgs e)
+    public override async Task OnClientConnected(ClientDataArgs e)
     {
         int id = NewId(e.Id);
 
@@ -55,11 +37,11 @@ public class JustusServer : ServerSocket
         {
             packet.Write("Welcome to the server");
 
-            _ = e.Channel.Send(packet.ToArray(), ConnectionType.TCP);
+            await e.Channel.Send(packet.ToArray(), ConnectionType.TCP);
         }
     }
 
-    private void server_OnClientActivated(object sender, ClientDataArgs e)
+    public override async Task OnClientActivated(ClientDataArgs e)
     {
         Debugging.Log($"Server: {IdMap[e.Id]} entered the game");
 
@@ -67,28 +49,30 @@ public class JustusServer : ServerSocket
         {
             packet.Write("You are now in-game");
 
-            _ = e.Channel.Send(packet.ToArray(), ConnectionType.TCP);
+            await e.Channel.Send(packet.ToArray(), ConnectionType.TCP);
         }
     }
 
-    private void server_OnClientOut(object sender, ClientDataArgs e)
+    public override Task OnClientDisconnected(ClientDataArgs e)
     {
         Debugging.Log($"Server: {IdMap[e.Id]} disconnected");
 
         IdMap.Remove(e.Id);
+
+        return Task.CompletedTask;
     }
 
-    private void server_OnDataIn(object sender, DataReceivedArgs e)
+    public override Task OnDataIn(DataReceivedArgs e)
     {
-        if (e.Data.Length == 0)
-            return;
+        if (e.Data.Length > 0)
+            using (var packet = new Packet(e.Data))
+            {
+                var data = packet.ReadString();
 
-        using (var packet = new Packet(e.Data))
-        {
-            var data = packet.ReadString();
+                Debugging.Log($"Server: From client {IdMap[e.Id]}: {data}");
+            }
 
-            Debugging.Log($"Server: From client {IdMap[e.Id]}: {data}");
-        }
+        return Task.CompletedTask;
     }
 
     private string ChannelId(int id)

@@ -1,5 +1,5 @@
-﻿using System;
-using System.Linq;
+﻿using NetSockets.Sockets;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -9,24 +9,20 @@ namespace NetSockets.Server
     public class Channel : ISender
     {
         public readonly string Id;
-        public IPEndPoint RemoteEndpoint { get; private set; }
+        public IPEndPoint RemoteEndpoint => tcpSocket?.RemoteEndPoint;
         private readonly ServerSocket thisServer;
-        private readonly byte[] buffer;
-        private TcpClient thisClient;
-        private NetworkStream stream;
-        public bool Running => thisClient != null && thisClient.Client != null && thisClient.Client.Connected;
+        private TcpSocket tcpSocket;
+        public bool Running => tcpSocket != null && tcpSocket.Connected;
 
-        public Channel(ServerSocket myServer, int bufferSize)
+        public Channel(ServerSocket myServer)
         {
             thisServer = myServer;
-            buffer = new byte[bufferSize];
             Id = Guid.NewGuid().ToString();
         }
 
         ~Channel()
         {
-            stream?.Dispose();
-            thisClient?.Dispose();
+            tcpSocket?.Dispose();
         }
 
         public async Task Open(TcpClient client)
@@ -37,10 +33,10 @@ namespace NetSockets.Server
             if (Running)
                 return;
 
-            thisClient = client;
-            RemoteEndpoint = (IPEndPoint)thisClient.Client.RemoteEndPoint;
+            tcpSocket = new TcpSocket(client);
+            tcpSocket.ReceiveBufferSize = thisServer.bufferSize;
 
-            StartListeners();
+            tcpSocket.Listen(DataRecieved);
 
             await thisServer.OnClientConnected(new ClientDataArgs
             {
@@ -51,32 +47,18 @@ namespace NetSockets.Server
             await thisServer.ConnectedChannels.ActivatePending();
         }
 
-        private void StartListeners()
+        private async Task DataRecieved(SocketDataReceived e)
         {
-            stream = thisClient.GetStream();
-            stream.BeginRead(buffer, 0, buffer.Length, TcpReceive, thisClient);
-        }
-
-        private async void TcpReceive(IAsyncResult ar)
-        {
-            int position = stream.EndRead(ar);
-
-            if (position == 0)
-            {
+            if (e.Data.Length > 0)
+                await thisServer.OnDataIn(new DataReceivedArgs()
+                {
+                    Type = e.Type,
+                    Data = e.Data,
+                    Id = Id,
+                    Channel = this
+                });
+            else if (e.Type == ConnectionType.TCP)
                 await Close();
-                return;
-            }
-
-            await thisServer.OnDataIn(new DataReceivedArgs()
-            {
-                Type = ConnectionType.TCP,
-                Data = buffer.Take(position).ToArray(),
-                Id = Id,
-                Channel = this
-            });
-
-            if (Running)
-                stream.BeginRead(buffer, 0, buffer.Length, TcpReceive, thisClient);
         }
 
         public async Task Send(byte[] data, ConnectionType type = ConnectionType.TCP)
@@ -87,19 +69,18 @@ namespace NetSockets.Server
             switch (type)
             {
                 case ConnectionType.UDP:
-                    await thisServer.udpClient.SendAsync(data, data.Length, RemoteEndpoint);
+                    await thisServer.udpSocket.SendAsync(data, RemoteEndpoint);
                     break;
                 case ConnectionType.TCP:
                 default:
-                    await stream.WriteAsync(data, 0, data.Length);
+                    await tcpSocket.SendAsync(data);
                     break;
             }
         }
 
         public async Task Close()
         {
-            stream.Close();
-            thisClient.Close();
+            tcpSocket.Close();
             thisServer.ConnectedChannels.TryRemove(Id, out Channel removedChannel);
 
             await thisServer.OnClientDisconnected(new ClientDataArgs

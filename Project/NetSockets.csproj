@@ -69,6 +69,9 @@
     <Compile Include="Assets\NetSockets\Interfaces\ISocket.cs" />
     <Compile Include="Assets\NetSockets\Server\Channels.cs" />
     <Compile Include="Assets\NetSockets\ThreadManager.cs" />
+    <Compile Include="Assets\NetSockets\Sockets\UdpSocket.cs" />
+    <Compile Include="Assets\NetSockets\Sockets\TcpSocket.cs" />
+    <Compile Include="Assets\NetSockets\Sockets\SocketDataReceived.cs" />
   </ItemGroup>
   <ItemGroup>
      <None Include="Assets\NetSockets\NetSockets.asmdef" />

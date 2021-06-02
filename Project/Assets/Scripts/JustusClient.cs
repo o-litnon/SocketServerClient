@@ -1,17 +1,17 @@
 using NetSockets.Client;
 using NetSockets;
 using System.Threading.Tasks;
+using System.Net;
 
 public class JustusClient : ClientSocket
 {
     public int? Id;
 
-    public JustusClient(string ip, int port, int bufferSize) : base(ip, port, bufferSize)
+    public JustusClient(string ip, int port, int bufferSize) : base(string.IsNullOrEmpty(ip) ? IPAddress.Loopback: IPAddress.Parse(ip), port, bufferSize)
     {
-        DataReceived += socket_DataReceived;
     }
 
-    private void socket_DataReceived(object sender, DataReceivedArgs e)
+    public override Task OnDataIn(DataReceivedArgs e)
     {
         using (var packet = new Packet(e.Data))
         {
@@ -25,6 +25,8 @@ public class JustusClient : ClientSocket
 
             Debugging.Log($"Client {Id}: {data}");
         }
+
+        return Task.CompletedTask;
     }
 
     public override async Task Open()
