@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace NetSockets.Server
 {
-    public class ServerSocket : ISocket
+    public class ServerSocket : ISocket, ISender
     {
         public bool Running { get; private set; }
         public event EventHandler<DataReceivedArgs> DataReceived;
@@ -81,14 +81,8 @@ namespace NetSockets.Server
             if (Running)
             {
                 Running = false;
-
-                var jobs = new List<Task>();
-
-                foreach (var item in ConnectedChannels.OpenChannels.Keys)
-                    if (ConnectedChannels.OpenChannels.TryGetValue(item, out Channel current))
-                        jobs.Add(current.Close());
-
-                await Task.WhenAll(jobs);
+                
+                await CloseAllConnections();
 
                 Listener.Stop();
                 udpSocket.Close();
@@ -96,7 +90,7 @@ namespace NetSockets.Server
         }
 
 
-        public Task SendAll(byte[] data, ConnectionType type)
+        public Task Send(byte[] data, ConnectionType type)
         {
             var jobs = new List<Task>();
 
@@ -105,12 +99,12 @@ namespace NetSockets.Server
 
             return Task.WhenAll(jobs);
         }
-        public async Task SendTo(byte[] data, ConnectionType type, string id)
+        public async Task Send(byte[] data, ConnectionType type, string id)
         {
             if (ConnectedChannels.ActiveChannels.TryGetValue(id, out Channel channel))
                 await channel.Send(data, type);
         }
-        public Task SendAllExcept(byte[] data, ConnectionType type, string id)
+        public Task SendExcept(byte[] data, ConnectionType type, string id)
         {
             var jobs = new List<Task>();
 
@@ -132,32 +126,26 @@ namespace NetSockets.Server
 
         public async Task CloseConnection(string id)
         {
-            if (ConnectedChannels.ActiveChannels.TryGetValue(id, out Channel channel))
+            if (ConnectedChannels.OpenChannels.TryGetValue(id, out Channel channel))
                 await channel.Close();
         }
 
-        public virtual Task OnDataIn(DataReceivedArgs e)
+        public virtual async Task OnDataIn(DataReceivedArgs e)
         {
             if (DataReceived != null)
-                return Task.Run(() => { lock (DataReceived) DataReceived.Invoke(this, e); });
-            else
-                return Task.CompletedTask;
+                await Task.Run(() => { lock (DataReceived) DataReceived.Invoke(this, e); });
         }
 
-        public virtual Task OnClientConnected(ClientDataArgs e)
+        public virtual async Task OnClientConnected(ClientDataArgs e)
         {
             if (ClientConnected != null)
-                return Task.Run(() => { lock (ClientConnected) ClientConnected.Invoke(this, e); });
-            else
-                return Task.CompletedTask;
+                await Task.Run(() => { lock (ClientConnected) ClientConnected.Invoke(this, e); });
         }
 
-        public virtual Task OnClientActivated(ClientDataArgs e)
+        public virtual async Task OnClientActivated(ClientDataArgs e)
         {
             if (ClientActivated != null)
-                return Task.Run(() => { lock (ClientActivated) ClientActivated.Invoke(this, e); });
-            else
-                return Task.CompletedTask;
+                await Task.Run(() => { lock (ClientActivated) ClientActivated.Invoke(this, e); });
         }
 
         public virtual Task OnClientDisconnected(ClientDataArgs e)

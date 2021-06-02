@@ -12,19 +12,19 @@ public class JustusServer : ServerSocket
 
     public Task SendAll(Packet packet, ConnectionType type)
     {
-        return SendAll(packet.ToArray(), type);
+        return Send(packet.ToArray(), type);
     }
     public Task SendTo(Packet packet, ConnectionType type, int id)
     {
         var guid = ChannelId(id);
 
-        return SendTo(packet.ToArray(), type, guid);
+        return Send(packet.ToArray(), type, guid);
     }
     public Task SendAllExcept(Packet packet, ConnectionType type, int id)
     {
         var guid = ChannelId(id);
 
-        return SendAllExcept(packet.ToArray(), type, guid);
+        return SendExcept(packet.ToArray(), type, guid);
     }
 
     public override async Task OnClientConnected(ClientDataArgs e)

@@ -86,9 +86,10 @@ namespace NetSockets.Client
             return Task.CompletedTask;
         }
 
-        public virtual Task OnDataIn(DataReceivedArgs e)
+        public virtual async Task OnDataIn(DataReceivedArgs e)
         {
-            return Task.Run(() => { lock (DataReceived) DataReceived?.Invoke(this, e); });
+            if (DataReceived != null)
+                await Task.Run(() => { lock (DataReceived) DataReceived.Invoke(this, e); });
         }
     }
 }

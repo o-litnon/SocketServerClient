@@ -76,12 +76,7 @@ namespace NetSockets.Sockets
             int position = stream.EndRead(ar);
 
             if (position == 0)
-                await dataReceived?.Invoke(new SocketDataReceived
-                {
-                    RemoteEndpoint = RemoteEndPoint,
-                    Type = ConnectionType.TCP,
-                    Data = new byte[0]
-                });
+                await OnDataReceived(new byte[0]);
             else
             {
                 var data = buffer.Take(position).ToArray();
@@ -103,12 +98,7 @@ namespace NetSockets.Sockets
                 length > 0 && length <= receivedData.UnreadLength();
                 length = packetLength(receivedData))
             {
-                await dataReceived?.Invoke(new SocketDataReceived
-                {
-                    RemoteEndpoint = RemoteEndPoint,
-                    Type = ConnectionType.TCP,
-                    Data = receivedData.ReadBytes(length)
-                });
+                await OnDataReceived(receivedData.ReadBytes(length));
             }
 
             receivedData.Reset(length <= 0);
@@ -122,6 +112,15 @@ namespace NetSockets.Sockets
                 return 0;
         }
 
+        private Task OnDataReceived(byte[] bytes)
+        {
+            return dataReceived?.Invoke(new SocketDataReceived
+            {
+                RemoteEndpoint = RemoteEndPoint,
+                Type = ConnectionType.TCP,
+                Data = bytes
+            });
+        }
         public void Close()
         {
             stream?.Close();
