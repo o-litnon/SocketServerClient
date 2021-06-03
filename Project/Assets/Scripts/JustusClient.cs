@@ -11,7 +11,7 @@ public class JustusClient : ClientSocket
     {
     }
 
-    public override Task OnDataIn(DataReceivedArgs e)
+    public override void OnDataIn(DataReceivedArgs e)
     {
         using (var packet = new Packet(e.Data))
         {
@@ -25,8 +25,6 @@ public class JustusClient : ClientSocket
 
             Debugging.Log($"Client {Id}: {data}");
         }
-
-        return Task.CompletedTask;
     }
 
     public override async Task Open()

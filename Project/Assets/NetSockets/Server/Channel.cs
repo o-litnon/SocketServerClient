@@ -38,7 +38,7 @@ namespace NetSockets.Server
 
             tcpSocket.Listen(DataRecieved);
 
-            await thisServer.OnClientConnected(new ClientDataArgs
+            thisServer.OnClientConnected(new ClientDataArgs
             {
                 Id = Id,
                 Channel = this
@@ -50,7 +50,7 @@ namespace NetSockets.Server
         private async Task DataRecieved(SocketDataReceived e)
         {
             if (e.Data.Length > 0)
-                await thisServer.OnDataIn(new DataReceivedArgs()
+                thisServer.OnDataIn(new DataReceivedArgs()
                 {
                     Type = e.Type,
                     Data = e.Data,
@@ -83,7 +83,7 @@ namespace NetSockets.Server
             tcpSocket.Close();
             thisServer.ConnectedChannels.TryRemove(Id, out Channel removedChannel);
 
-            await thisServer.OnClientDisconnected(new ClientDataArgs
+            thisServer.OnClientDisconnected(new ClientDataArgs
             {
                 Id = Id,
                 Channel = this

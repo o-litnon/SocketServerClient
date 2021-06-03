@@ -58,9 +58,9 @@ namespace NetSockets.Sockets
             var remoteEndpoint = default(IPEndPoint);
             byte[] data = udpClient.EndReceive(ar, ref remoteEndpoint);
 
-            udpClient.BeginReceive(UdpReceive, this);
-
             await HandleData(data, remoteEndpoint);
+
+            udpClient.BeginReceive(UdpReceive, this);
         }
         private async Task HandleData(byte[] data, IPEndPoint remoteEndpoint)
         {

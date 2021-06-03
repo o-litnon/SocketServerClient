@@ -59,17 +59,19 @@ namespace NetSockets.Server
             await channel.Open(client);
         }
 
-        private async Task UdpDataRecieved(SocketDataReceived e)
+        private Task UdpDataRecieved(SocketDataReceived e)
         {
             var channel = ConnectedChannels.OpenChannels.FirstOrDefault(d => d.Value.RemoteEndpoint.Equals(e.RemoteEndpoint));
 
-            await OnDataIn(new DataReceivedArgs
+            Task.Run(() => OnDataIn(new DataReceivedArgs
             {
                 Type = e.Type,
                 Id = channel.Key,
                 Channel = channel.Value,
                 Data = e.Data
-            });
+            }));
+
+            return Task.CompletedTask;
         }
 
         public virtual async Task Close()
@@ -126,9 +128,9 @@ namespace NetSockets.Server
                 await channel.Close();
         }
 
-        public abstract Task OnDataIn(DataReceivedArgs e);
-        public abstract Task OnClientConnected(ClientDataArgs e);
-        public abstract Task OnClientActivated(ClientDataArgs e);
-        public abstract Task OnClientDisconnected(ClientDataArgs e);
+        public abstract void OnDataIn(DataReceivedArgs e);
+        public abstract void OnClientConnected(ClientDataArgs e);
+        public abstract void OnClientActivated(ClientDataArgs e);
+        public abstract void OnClientDisconnected(ClientDataArgs e);
     }
 }

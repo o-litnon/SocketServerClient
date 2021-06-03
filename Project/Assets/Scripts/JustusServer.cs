@@ -27,7 +27,7 @@ public class JustusServer : ServerSocket
         return SendExcept(packet.ToArray(), type, guid);
     }
 
-    public override async Task OnClientConnected(ClientDataArgs e)
+    public override async void OnClientConnected(ClientDataArgs e)
     {
         int id = NewId(e.Id);
 
@@ -41,7 +41,7 @@ public class JustusServer : ServerSocket
         }
     }
 
-    public override async Task OnClientActivated(ClientDataArgs e)
+    public override async void OnClientActivated(ClientDataArgs e)
     {
         Debugging.Log($"Server: {IdMap[e.Id]} entered the game");
 
@@ -53,16 +53,14 @@ public class JustusServer : ServerSocket
         }
     }
 
-    public override Task OnClientDisconnected(ClientDataArgs e)
+    public override void OnClientDisconnected(ClientDataArgs e)
     {
         Debugging.Log($"Server: {IdMap[e.Id]} disconnected");
 
         IdMap.Remove(e.Id);
-
-        return Task.CompletedTask;
     }
 
-    public override Task OnDataIn(DataReceivedArgs e)
+    public override void OnDataIn(DataReceivedArgs e)
     {
         if (e.Data.Length > 0)
             using (var packet = new Packet(e.Data))
@@ -71,8 +69,6 @@ public class JustusServer : ServerSocket
 
                 Debugging.Log($"Server: From client {IdMap[e.Id]}: {data}");
             }
-
-        return Task.CompletedTask;
     }
 
     private string ChannelId(int id)

@@ -64,11 +64,11 @@ namespace NetSockets.Client
         private async Task DataRecieved(SocketDataReceived e)
         {
             if (e.Data.Length > 0)
-                await OnDataIn(new DataReceivedArgs()
+                _ = Task.Run(() => OnDataIn(new DataReceivedArgs()
                 {
                     Type = e.Type,
                     Data = e.Data
-                });
+                }));
             else if (e.Type == ConnectionType.TCP)
                 await Close();
         }
@@ -84,6 +84,6 @@ namespace NetSockets.Client
             return Task.CompletedTask;
         }
 
-        public abstract Task OnDataIn(DataReceivedArgs e);
+        public abstract void OnDataIn(DataReceivedArgs e);
     }
 }

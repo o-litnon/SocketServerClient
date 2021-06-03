@@ -76,10 +76,10 @@ namespace NetSockets.Sockets
             {
                 var data = buffer.Take(position).ToArray();
 
+                await HandleData(data);
+
                 if (Connected)
                     stream.BeginRead(buffer, 0, buffer.Length, TcpReceive, this);
-
-                await HandleData(data);
             }
         }
 
