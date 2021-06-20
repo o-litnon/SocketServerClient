@@ -22,6 +22,7 @@ namespace NetSockets.Client
 
         ~ClientSocket()
         {
+            Close().Wait();
             tcpSocket?.Dispose();
             udpSocket?.Dispose();
         }

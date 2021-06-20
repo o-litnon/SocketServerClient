@@ -28,6 +28,7 @@ namespace NetSockets.Server
 
         ~ServerSocket()
         {
+            Close().Wait();
             udpSocket?.Dispose();
         }
 
